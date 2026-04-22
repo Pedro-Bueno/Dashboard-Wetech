@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wetech — Dashboard en Vivo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+:root{--bg:#0a0a0f;--sur:#111118;--sur2:#1a1a24;--brd:rgba(255,255,255,0.07);--acc:#00e5a0;--acc2:#3d6fff;--acc3:#ff6b35;--txt:#f0f0f5;--mut:#6b6b80}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;padding:20px}
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px}
+#loading .logo{font-size:32px;font-weight:600;letter-spacing:-1px}
+#loading .logo span{color:var(--acc)}
+.spinner{width:32px;height:32px;border:2px solid var(--brd);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading p{font-size:13px;color:var(--mut)}
+
+/* SETUP BANNER */
+#setup-banner{background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:none}
+#setup-banner h3{font-size:14px;color:var(--acc3);margin-bottom:8px}
+#setup-banner p{font-size:12px;color:#ffb08a;line-height:1.6}
+#setup-banner code{background:rgba(255,107,53,0.15);padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--brd)}
+.logo-wrap{display:flex;align-items:center;gap:10px}
+.logo-mark{width:34px;height:34px;background:var(--acc);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:#000}
+.logo-txt{font-size:18px;font-weight:600;letter-spacing:-.5px}
+.logo-sub{font-size:11px;color:var(--mut)}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.badge-live{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:500;background:rgba(0,229,160,0.1);color:var(--acc);padding:4px 10px;border-radius:20px;border:1px solid rgba(0,229,160,0.2)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.last-sync{font-size:11px;color:var(--mut);font-family:'DM Mono',monospace}
+.btn-sync{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--brd);background:transparent;color:var(--mut);font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-sync:hover{border-color:var(--acc);color:var(--acc)}
+
+/* YEAR TABS */
+.year-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.ytab{padding:6px 16px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--brd);background:transparent;color:var(--mut);transition:all .15s;font-family:'DM Sans',sans-serif}
+.ytab:hover{color:var(--txt);border-color:rgba(255,255,255,0.2)}
+.ytab.active{background:var(--acc);color:#000;border-color:var(--acc)}
+
+/* NOTA */
+.nota{background:rgba(61,111,255,0.08);border:1px solid rgba(61,111,255,0.2);border-radius:10px;padding:9px 14px;font-size:11px;color:#7da4ff;margin-bottom:18px}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:var(--sur);border:1px solid var(--brd);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
+.kpi-lbl{font-size:10px;font-weight:500;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+.kpi-val{font-size:24px;font-weight:600;letter-spacing:-1px;line-height:1}
+.kpi-sub{font-size:11px;color:var(--mut);margin-top:4px}
+.kpi-bar{position:absolute;top:0;left:0;width:3px;height:100%;border-radius:3px 0 0 3px}
+.kpi.g .kpi-bar{background:var(--acc)}.kpi.g .kpi-val{color:var(--acc)}
+.kpi.b .kpi-bar{background:var(--acc2)}.kpi.b .kpi-val{color:var(--acc2)}
+.kpi.o .kpi-bar{background:var(--acc3)}.kpi.o .kpi-val{color:var(--acc3)}
+.kpi.w .kpi-bar{background:rgba(255,255,255,.3)}
+
+/* CARDS */
+.row2{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px}
+.row-eq{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.card{background:var(--sur);border:1px solid var(--brd);border-radius:12px;padding:16px 18px}
+.card-ttl{font-size:11px;font-weight:500;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.cbadge{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--sur2);color:var(--mut)}
+.chart-wrap{position:relative}
+
+/* RANK TABLE */
+.rk-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd)}
+.rk-row:last-child{border-bottom:none}
+.rk-n{font-size:10px;font-family:'DM Mono',monospace;color:var(--mut);width:14px;text-align:center}
+.rk-name{flex:1;font-size:12px;font-weight:500}
+.rk-bar-w{width:60px;background:var(--sur2);border-radius:3px;height:3px}
+.rk-bar{height:3px;border-radius:3px;background:var(--acc)}
+.rk-val{font-size:11px;font-family:'DM Mono',monospace;text-align:right;min-width:55px}
+.rk-sub{font-size:10px;color:var(--mut);text-align:right;min-width:28px}
+
+.footer{margin-top:24px;padding-top:14px;border-top:1px solid var(--brd);display:flex;justify-content:space-between;font-size:11px;color:var(--mut);font-family:'DM Mono',monospace}
+
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.row2{grid-template-columns:1fr}}
+@media(max-width:700px){.row-eq{grid-template-columns:1fr}.row3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="logo">We<span>tech</span></div>
+  <div class="spinner"></div>
+  <p>Cargando datos desde Google Sheets...</p>
+</div>
+
+<!-- SETUP BANNER (aparece si no hay URL configurada) -->
+<div id="setup-banner">
+  <h3>⚙️ Configura tu URL de Apps Script</h3>
+  <p>Para conectar con Google Sheets, abre este archivo HTML en un editor de texto y reemplaza la línea:<br><br>
+  <code>const SCRIPT_URL = "PEGA_TU_URL_AQUI";</code><br><br>
+  con la URL que te dio Google al implementar el script. Revisa el archivo <code>wetech_apps_script.gs</code> para las instrucciones completas.</p>
+</div>
+
+<div id="app" style="display:none">
+
+<div class="header">
+  <div class="logo-wrap">
+    <div class="logo-mark">W</div>
+    <div><div class="logo-txt">Wetech</div><div class="logo-sub">Dashboard en vivo</div></div>
+  </div>
+  <div class="hdr-right">
+    <span class="last-sync" id="last-sync">--</span>
+    <button class="btn-sync" onclick="cargarDatos()">↺ Actualizar</button>
+    <span class="badge-live"><span class="dot"></span>Google Sheets</span>
+  </div>
+</div>
+
+<div class="year-tabs" id="year-tabs"></div>
+
+<div class="nota">
+  ⓘ Incluye VENTA FINALIZADA + VENDIDO. Ganancia = precio venta − costo − $500 comisión. Los equipos tomados a cambio pueden mostrar ganancia negativa por diseño.
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi g"><div class="kpi-bar"></div><div class="kpi-lbl">Equipos vendidos</div><div class="kpi-val" id="k-eq">—</div><div class="kpi-sub" id="k-eq-sub">—</div></div>
+  <div class="kpi b"><div class="kpi-bar"></div><div class="kpi-lbl">Ingresos totales</div><div class="kpi-val" id="k-ing">—</div><div class="kpi-sub" id="k-ing-sub">—</div></div>
+  <div class="kpi o"><div class="kpi-bar"></div><div class="kpi-lbl">Ganancia neta est.</div><div class="kpi-val" id="k-gan">—</div><div class="kpi-sub">precio − costo − $500/eq</div></div>
+  <div class="kpi w"><div class="kpi-bar"></div><div class="kpi-lbl">Ticket promedio</div><div class="kpi-val" id="k-tkt">—</div><div class="kpi-sub" id="k-tkt-sub">—</div></div>
+</div>
+
+<div class="row2">
+  <div class="card">
+    <div class="card-ttl">Ingresos y ganancia mensual <span class="cbadge" id="b-meses">cargando...</span></div>
+    <div class="chart-wrap" style="height:200px"><canvas id="cMeses" role="img" aria-label="Ingresos y ganancia mensual"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-ttl">Equipos / mes <span class="cbadge">volumen</span></div>
+    <div class="chart-wrap" style="height:200px"><canvas id="cVol" role="img" aria-label="Equipos por mes"></canvas></div>
+  </div>
+</div>
+
+<div class="row-eq">
+  <div class="card">
+    <div class="card-ttl">Vendedores <span class="cbadge">por ingresos</span></div>
+    <div id="t-vend"></div>
+  </div>
+  <div class="card">
+    <div class="card-ttl">Top modelos <span class="cbadge">por ingresos</span></div>
+    <div id="t-mod"></div>
+  </div>
+</div>
+
+<div class="row3">
+  <div class="card">
+    <div class="card-ttl">Método de pago <span class="cbadge">histórico</span></div>
+    <div class="chart-wrap" style="height:160px"><canvas id="cPago" role="img" aria-label="Métodos de pago"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-ttl">Ganancia por vendedor <span class="cbadge">histórico</span></div>
+    <div class="chart-wrap" style="height:160px"><canvas id="cGanVend" role="img" aria-label="Ganancia por vendedor"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-ttl">Ingresos por año <span class="cbadge">histórico</span></div>
+    <div class="chart-wrap" style="height:160px"><canvas id="cAnios" role="img" aria-label="Ingresos por año"></canvas></div>
+  </div>
+</div>
+
+<div class="footer">
+  <span>Wetech · Dashboard conectado a Google Sheets</span>
+  <span id="footer-info">Cargando...</span>
+</div>
+
+</div><!-- #app -->
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONFIGURACIÓN — REEMPLAZA ESTA URL CON LA TUYA DE APPS SCRIPT
+// ══════════════════════════════════════════════════════════════
+const SCRIPT_URL = "PEGA_TU_URL_AQUI";
+// ══════════════════════════════════════════════════════════════
+
+let DATA = null;
+let currentYear = "todos";
+let charts = {};
+
+const COLORS = ['#00e5a0','#3d6fff','#ff6b35','#a78bfa','#fb923c','#64748b','#ec4899','#14b8a6'];
+
+function fmt(n) {
+  if (!n && n !== 0) return "—";
+  const abs = Math.abs(n);
+  const sign = n < 0 ? "-" : "";
+  if (abs >= 1000000) return sign + "$" + (abs/1000000).toFixed(1) + "M";
+  if (abs >= 1000) return sign + "$" + Math.round(abs/1000) + "K";
+  return sign + "$" + Math.round(abs).toLocaleString("es-MX");
+}
+function fmtFull(n) {
+  if (!n && n !== 0) return "—";
+  return (n < 0 ? "-$" : "$") + Math.abs(Math.round(n)).toLocaleString("es-MX");
+}
+
+async function cargarDatos() {
+  document.getElementById("loading").style.display = "flex";
+  document.getElementById("app").style.display = "none";
+
+  if (SCRIPT_URL === "PEGA_TU_URL_AQUI") {
+    // Modo demo — usa datos de muestra
+    DATA = getDemoData();
+    mostrarApp();
+    return;
+  }
+
+  try {
+    const res = await fetch(SCRIPT_URL + "?t=" + Date.now());
+    DATA = await res.json();
+    mostrarApp();
+  } catch(e) {
+    DATA = getDemoData();
+    document.getElementById("setup-banner").style.display = "block";
+    mostrarApp();
+  }
+}
+
+function mostrarApp() {
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("app").style.display = "block";
+
+  const ahora = new Date();
+  document.getElementById("last-sync").textContent =
+    "Sync: " + ahora.toLocaleTimeString("es-MX", {hour:"2-digit", minute:"2-digit"});
+
+  // Construir tabs de año
+  const anos = DATA.anos.map(a => a.ano);
+  const tabsEl = document.getElementById("year-tabs");
+  tabsEl.innerHTML = "";
+  ["todos", ...anos.reverse()].forEach(y => {
+    const btn = document.createElement("button");
+    btn.className = "ytab" + (String(y) === String(currentYear) ? " active" : "");
+    btn.textContent = y === "todos" ? "Todo el historial" : (y === new Date().getFullYear() ? y + " YTD" : String(y));
+    btn.onclick = () => { currentYear = y; document.querySelectorAll(".ytab").forEach(t=>t.classList.remove("active")); btn.classList.add("active"); renderYear(); };
+    tabsEl.appendChild(btn);
+  });
+
+  // Footer
+  document.getElementById("footer-info").textContent =
+    (DATA.resumen.totalEq || 0).toLocaleString("es-MX") + " registros · " + new Date().toLocaleDateString("es-MX", {day:"2-digit", month:"short", year:"numeric"});
+
+  renderYear();
+  renderStaticCharts();
+}
+
+function getYearData(y) {
+  if (y === "todos") {
+    return {
+      eq: DATA.resumen.totalEq,
+      ing: DATA.resumen.totalIng,
+      gan: DATA.resumen.totalGan,
+      ticket: DATA.resumen.ticketProm,
+      sub_eq: "historial completo",
+      sub_ing: "todos los años",
+      meses: DATA.meses,
+      vendedores: DATA.vendedores,
+      modelos: DATA.modelos
+    };
+  }
+  const yNum = Number(y);
+  const yData = DATA.anos.find(a => a.ano === yNum) || {eq:0,ing:0,gan:0};
+  const meses = DATA.meses.filter(m => m.key.startsWith(String(y)));
+  const esAnoActual = yNum === new Date().getFullYear();
+  return {
+    eq: yData.eq, ing: yData.ing, gan: yData.gan,
+    ticket: yData.eq > 0 ? Math.round(yData.ing / yData.eq) : 0,
+    sub_eq: esAnoActual ? "lo que va del año" : "año " + y,
+    sub_ing: esAnoActual ? "enero a " + ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][new Date().getMonth()+1] : "año completo",
+    meses, vendedores: DATA.vendedores, modelos: DATA.modelos
+  };
+}
+
+function renderYear() {
+  const d = getYearData(currentYear);
+
+  document.getElementById("k-eq").textContent = (d.eq||0).toLocaleString("es-MX");
+  document.getElementById("k-eq-sub").textContent = d.sub_eq;
+  document.getElementById("k-ing").textContent = fmt(d.ing);
+  document.getElementById("k-ing-sub").textContent = d.sub_ing;
+  document.getElementById("k-gan").textContent = fmt(d.gan);
+  document.getElementById("k-tkt").textContent = fmtFull(d.ticket);
+  document.getElementById("k-tkt-sub").textContent = "por equipo";
+
+  const m = d.meses;
+  document.getElementById("b-meses").textContent = currentYear === "todos" ? "últimos 14 meses" : String(currentYear);
+
+  // Chart meses
+  if (charts.meses) charts.meses.destroy();
+  charts.meses = new Chart(document.getElementById("cMeses"), {
+    type: "bar",
+    data: { labels: m.map(x=>x.label), datasets: [
+      {label:"Ingresos", data:m.map(x=>x.ing), backgroundColor:"rgba(61,111,255,0.65)", borderRadius:4, yAxisID:"y"},
+      {label:"Ganancia", data:m.map(x=>x.gan), type:"line", borderColor:"#00e5a0", backgroundColor:"transparent", borderWidth:2, pointRadius:3, pointBackgroundColor:"#00e5a0", yAxisID:"y", tension:0.3}
+    ]},
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>ctx.dataset.label+": "+fmtFull(ctx.raw)}} },
+      scales:{
+        x:{ticks:{color:"#6b6b80",font:{size:10}},grid:{color:"rgba(255,255,255,0.04)"}},
+        y:{ticks:{color:"#6b6b80",font:{size:10},callback:v=>fmt(v)},grid:{color:"rgba(255,255,255,0.04)"}}
+      }
+    }
+  });
+
+  // Chart volumen
+  if (charts.vol) charts.vol.destroy();
+  charts.vol = new Chart(document.getElementById("cVol"), {
+    type: "bar",
+    data: { labels: m.map(x=>x.label), datasets: [{
+      label:"Equipos", data:m.map(x=>x.eq),
+      backgroundColor: m.map(x=>x.gan<0?"rgba(255,71,87,0.7)":"rgba(0,229,160,0.7)"), borderRadius:4
+    }]},
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw+" equipos"}}},
+      scales:{
+        x:{ticks:{color:"#6b6b80",font:{size:10}},grid:{color:"rgba(255,255,255,0.04)"}},
+        y:{ticks:{color:"#6b6b80",font:{size:10}},grid:{color:"rgba(255,255,255,0.04)"}}
+      }
+    }
+  });
+
+  // Tabla vendedores
+  const maxV = Math.max(...DATA.vendedores.map(v=>v.ing));
+  document.getElementById("t-vend").innerHTML = DATA.vendedores.map((v,i)=>`
+    <div class="rk-row">
+      <span class="rk-n">${i+1}</span>
+      <span class="rk-name">${v.nombre}</span>
+      <div class="rk-bar-w"><div class="rk-bar" style="width:${Math.round(v.ing/maxV*100)}%"></div></div>
+      <span class="rk-val">${fmt(v.ing)}</span>
+      <span class="rk-sub">${v.eq}eq</span>
+    </div>`).join("");
+
+  // Tabla modelos
+  const maxM = Math.max(...DATA.modelos.map(m=>m.ing));
+  document.getElementById("t-mod").innerHTML = DATA.modelos.map((m,i)=>`
+    <div class="rk-row">
+      <span class="rk-n">${i+1}</span>
+      <span class="rk-name" style="font-size:11px">${m.nombre}</span>
+      <div class="rk-bar-w"><div class="rk-bar" style="width:${Math.round(m.ing/maxM*100)}%;background:var(--acc2)"></div></div>
+      <span class="rk-val">${fmt(m.ing)}</span>
+      <span class="rk-sub">${m.eq}eq</span>
+    </div>`).join("");
+}
+
+function renderStaticCharts() {
+  // Pagos
+  if (charts.pago) charts.pago.destroy();
+  charts.pago = new Chart(document.getElementById("cPago"), {
+    type:"doughnut",
+    data:{ labels:DATA.pagos.map(p=>p.nombre), datasets:[{data:DATA.pagos.map(p=>p.count), backgroundColor:COLORS, borderWidth:0, hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"58%",
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.label+": "+ctx.raw+" ventas"}}}
+    }
+  });
+
+  // Ganancia por vendedor
+  if (charts.ganVend) charts.ganVend.destroy();
+  charts.ganVend = new Chart(document.getElementById("cGanVend"), {
+    type:"bar",
+    data:{ labels:DATA.vendedores.map(v=>v.nombre), datasets:[{label:"Ganancia",data:DATA.vendedores.map(v=>v.gan),backgroundColor:COLORS,borderRadius:4}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)}}},
+      scales:{
+        x:{ticks:{color:"#6b6b80",font:{size:10},callback:v=>fmt(v)},grid:{color:"rgba(255,255,255,0.04)"}},
+        y:{ticks:{color:"#6b6b80",font:{size:10}},grid:{display:false}}
+      }
+    }
+  });
+
+  // Años
+  if (charts.anos) charts.anos.destroy();
+  charts.anos = new Chart(document.getElementById("cAnios"), {
+    type:"doughnut",
+    data:{labels:DATA.anos.map(a=>String(a.ano)),datasets:[{data:DATA.anos.map(a=>a.ing),backgroundColor:COLORS,borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"52%",
+      plugins:{legend:{position:"bottom",labels:{color:"#6b6b80",font:{size:10},boxWidth:8,padding:10}},
+        tooltip:{callbacks:{label:ctx=>ctx.label+": "+fmt(ctx.raw)}}}
+    }
+  });
+}
+
+function getDemoData() {
+  return {
+    generado: new Date().toISOString(),
+    resumen: {totalEq:1058,totalIng:17087787,totalGan:1871621,ticketProm:16151,stock:130,stockCosto:1701438},
+    anoActual: {ano:2026,eq:73,ing:1228493,gan:100291},
+    mesActual: {eq:12,ing:251236,gan:30736},
+    meses: [
+      {key:"2025-04",label:"Abr25",eq:17,ing:366997,gan:51049},
+      {key:"2025-05",label:"May25",eq:20,ing:271285,gan:38791},
+      {key:"2025-06",label:"Jun25",eq:16,ing:222041,gan:18643},
+      {key:"2025-07",label:"Jul25",eq:24,ing:422140,gan:32352},
+      {key:"2025-08",label:"Ago25",eq:21,ing:285338,gan:11256},
+      {key:"2025-09",label:"Sep25",eq:14,ing:227779,gan:5656},
+      {key:"2025-10",label:"Oct25",eq:27,ing:438044,gan:27218},
+      {key:"2025-11",label:"Nov25",eq:51,ing:767726,gan:-2969},
+      {key:"2025-12",label:"Dic25",eq:30,ing:413119,gan:41023},
+      {key:"2026-01",label:"Ene26",eq:16,ing:276545,gan:24085},
+      {key:"2026-02",label:"Feb26",eq:30,ing:414866,gan:12373},
+      {key:"2026-03",label:"Mar26",eq:14,ing:259347,gan:30898},
+      {key:"2026-04",label:"Abr26",eq:12,ing:251236,gan:30736},
+    ],
+    anos: [
+      {ano:2023,eq:67,ing:1157006,gan:157756},
+      {ano:2024,eq:343,ing:5206927,gan:785886},
+      {ano:2025,eq:299,ing:4824768,gan:353207},
+      {ano:2026,eq:73,ing:1228493,gan:100291},
+    ],
+    vendedores: [
+      {nombre:"Odett",eq:205,ing:3129673,gan:324922},
+      {nombre:"Pedro",eq:176,ing:2745974,gan:278842},
+      {nombre:"Athziri",eq:145,ing:2250652,gan:143799},
+      {nombre:"Citlali",eq:102,ing:1525968,gan:151052},
+      {nombre:"Yare",eq:82,ing:1248139,gan:84046},
+      {nombre:"Diana",eq:14,ing:209948,gan:35989},
+    ],
+    modelos: [
+      {nombre:"iPhone 17 Pro Max ESIM",eq:33,ing:879865,gan:65865},
+      {nombre:"iPhone 16 CHIP",eq:22,ing:371160,gan:42160},
+      {nombre:"iPhone 17 PRO",eq:13,ing:335148,gan:26148},
+      {nombre:"iPhone 15",eq:43,ing:283291,gan:218291},
+      {nombre:"iPhone 14",eq:33,ing:280000,gan:100000},
+      {nombre:"MacBook Air M4",eq:9,ing:228799,gan:37799},
+      {nombre:"Apple Watch SE 2gen",eq:20,ing:91715,gan:35715},
+      {nombre:"iPad 11",eq:8,ing:60495,gan:24495},
+    ],
+    pagos: [
+      {nombre:"Efectivo",count:192},
+      {nombre:"Transferencia",count:426},
+      {nombre:"Tarjeta",count:95},
+      {nombre:"Crédito Wetech",count:6},
+      {nombre:"Tanda",count:18},
+      {nombre:"Otros",count:24},
+    ]
+  };
+}
+
+// Arrancar
+cargarDatos();
+</script>
+</body>
+</html>
