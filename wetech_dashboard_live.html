@@ -98,7 +98,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-
 <div id="setup-banner">
   <h3>⚙️ Configura tu URL de Apps Script</h3>
   <p>Para conectar con Google Sheets, abre este archivo HTML en un editor de texto y reemplaza la línea:<br><br>
-  <code>const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-5ZVUcFfW3PVLt3cuY_HpcPvlyJfou_UQzdCwbW1GuobrheYnGbkb8by6IAeeKoe2/exec";</code><br><br>
+  <code>const SCRIPT_URL = "PEGA_TU_URL_AQUI";</code><br><br>
   con la URL que te dio Google al implementar el script. Revisa el archivo <code>wetech_apps_script.gs</code> para las instrucciones completas.</p>
 </div>
 
@@ -211,7 +211,7 @@ async function cargarDatos() {
   }
 
   try {
-    const res = await fetch(SCRIPT_URL);
+    const res = await fetch(SCRIPT_URL + "?t=" + Date.now());
     DATA = await res.json();
     mostrarApp();
   } catch(e) {
