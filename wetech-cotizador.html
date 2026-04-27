@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizador Wetech</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1A6EFF;--blue-light:#EBF2FF;--blue-dark:#0D4DB3;
+  --green:#16A34A;--green-light:#DCFCE7;
+  --amber:#D97706;--amber-light:#FEF3C7;
+  --purple:#7C3AED;--purple-light:#EDE9FE;
+  --gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;
+  --gray-400:#9CA3AF;--gray-600:#4B5563;--gray-900:#111827;
+  --radius:12px;--radius-sm:8px;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#F6F8FF;color:var(--gray-900);min-height:100vh;padding:24px 16px 60px}
+.container{max-width:680px;margin:0 auto}
+
+.header{text-align:center;margin-bottom:32px;padding-top:8px}
+.logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:16px}
+.logo-icon{width:40px;height:40px;background:var(--blue);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.logo-icon svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2}
+.logo-text{font-size:22px;font-weight:600;color:var(--gray-900);letter-spacing:-.5px}
+.header h2{font-size:14px;font-weight:400;color:var(--gray-400);letter-spacing:.01em}
+
+.card{background:#fff;border-radius:var(--radius);border:1px solid var(--gray-200);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card-title{font-size:11px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.grid2{grid-template-columns:1fr}}
+.fld{display:flex;flex-direction:column;gap:5px}
+.fld label{font-size:13px;color:var(--gray-600);font-weight:500}
+.fld input,.fld select{border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:9px 12px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--gray-900);background:#fff;outline:none;transition:border-color .15s}
+.fld input:focus,.fld select:focus{border-color:var(--blue)}
+
+.seg-wrap{display:flex;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);overflow:hidden;margin-top:12px}
+.seg{flex:1;border:none;padding:8px 6px;cursor:pointer;background:#fff;color:var(--gray-600);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;text-align:center;border-right:1px solid var(--gray-200);transition:all .12s}
+.seg:last-child{border-right:none}
+.seg:hover{background:var(--gray-50)}
+.seg.on{background:var(--blue);color:#fff;font-weight:600}
+
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tab{border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:7px 14px;cursor:pointer;background:#fff;color:var(--gray-600);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;transition:all .12s}
+.tab:hover{border-color:var(--blue);color:var(--blue)}
+.tab.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+
+.sec{display:none}.sec.vis{display:block}
+.empty{text-align:center;padding:40px 20px;color:var(--gray-400);font-size:14px}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:400px){.stats{grid-template-columns:1fr 1fr}}
+.stat{background:var(--gray-50);border-radius:var(--radius-sm);padding:12px;text-align:center;border:1px solid var(--gray-100)}
+.stat.hi{background:var(--blue-light);border-color:#C7DCFF}
+.stat-label{font-size:11px;color:var(--gray-400);margin-bottom:4px;font-weight:500}
+.stat-val{font-size:17px;font-weight:600;color:var(--gray-900)}
+.stat.hi .stat-val{color:var(--blue-dark)}
+.stat-sub{font-size:11px;color:var(--gray-400);margin-top:2px}
+
+.row{display:flex;align-items:center;gap:8px;padding:10px 13px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:6px;border:1px solid transparent;transition:border-color .1s;flex-wrap:wrap}
+.row:hover{border-color:var(--gray-200)}
+.row.best{background:var(--green-light);border-color:#BBF7D0}
+.row-tag{font-size:13px;font-weight:600;min-width:90px;color:var(--gray-900)}
+.row-pago{font-size:15px;font-weight:600;flex:1;color:var(--gray-900);font-family:'DM Mono',monospace}
+.row-total{font-size:12px;color:var(--gray-400);min-width:100px;text-align:right;font-family:'DM Mono',monospace}
+.badge{display:inline-flex;align-items:center;font-size:11px;padding:2px 8px;border-radius:100px;font-weight:600;margin-left:4px;white-space:nowrap}
+.b-green{background:var(--green-light);color:var(--green)}
+.b-blue{background:var(--blue-light);color:var(--blue-dark)}
+.b-amber{background:var(--amber-light);color:var(--amber)}
+.b-purple{background:var(--purple-light);color:var(--purple)}
+
+.tips{margin-top:14px;padding-top:14px;border-top:1px solid var(--gray-100)}
+.tip{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;font-size:13px;color:var(--gray-600);line-height:1.55}
+.tip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.tg{background:var(--green)}.tb{background:var(--blue)}.ta{background:var(--amber)}.tp{background:var(--purple)}
+.tip b{color:var(--gray-900);font-weight:600}
+
+.nota{font-size:12px;color:var(--gray-400);text-align:center;margin-top:10px}
+
+.ff-tabs{display:flex;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:14px}
+.ff-tab{flex:1;border:none;padding:8px 6px;cursor:pointer;background:#fff;color:var(--gray-600);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;text-align:center;border-right:1px solid var(--gray-200);transition:all .12s}
+.ff-tab:last-child{border-right:none}
+.ff-tab.on{background:var(--purple);color:#fff;font-weight:600}
+
+.exp-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.exp-btn{display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:10px 14px;cursor:pointer;background:#fff;color:var(--gray-700);font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;transition:all .12s}
+.exp-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.exp-btn svg{width:16px;height:16px;flex-shrink:0}
+
+.freq-label{font-size:11px;color:var(--gray-400);font-weight:400;margin-left:2px}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1"/></svg>
+    </div>
+    <span class="logo-text">Wetech</span>
+  </div>
+  <h2>Cotizador de financiamiento</h2>
+</div>
+
+<div class="card">
+  <div class="card-title">Datos del equipo</div>
+  <div class="grid2" style="margin-bottom:12px">
+    <div class="fld"><label>Precio de contado</label><input type="number" id="pc" placeholder="Ej: 18500" min="0" step="100"></div>
+    <div class="fld"><label>Nombre del equipo</label><input type="text" id="nom" placeholder="Ej: iPhone 16 Pro 128GB"></div>
+  </div>
+  <div class="fld"><label>Frecuencia de pago</label></div>
+  <div class="seg-wrap">
+    <button type="button" class="seg on" data-freq="mensual">Mensual</button>
+    <button type="button" class="seg" data-freq="quincenal">Quincenal</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button type="button" class="tab on" data-tab="mp">Mercado Pago</button>
+  <button type="button" class="tab" data-tab="cp">Caja Popular</button>
+  <button type="button" class="tab" data-tab="ff">Friends &amp; Family</button>
+  <button type="button" class="tab" data-tab="cmp">Comparar todo</button>
+</div>
+
+<div id="s-mp" class="sec vis"></div>
+<div id="s-cp" class="sec"></div>
+<div id="s-ff" class="sec"></div>
+<div id="s-cmp" class="sec"></div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+let freq='mensual', ffMod='con50';
+const MP=[{l:'3 meses',m:3,f:.91},{l:'6 meses',m:6,f:.88},{l:'9 meses',m:9,f:.84},{l:'12 meses',m:12,f:.82}];
+const CP=[{l:'6 meses',m:6,f:.96},{l:'12 meses',m:12,f:.92},{l:'18 meses',m:18,f:.88},{l:'24 meses',m:24,f:.86}];
+const FF_CON=[{l:'3 pagos',m:3,i:1.05},{l:'6 pagos',m:6,i:1.10},{l:'9 pagos',m:9,i:1.15,rest:true}];
+const FF_SIN=[{l:'3 pagos',m:3,i:1.05},{l:'6 pagos',m:6,i:1.10},{l:'9 pagos',m:9,i:1.15}];
+
+const fmt=n=>'$'+Math.round(n).toLocaleString('es-MX');
+const pct=(e,b)=>((e/b)*100).toFixed(1)+'%';
+const pers=m=>freq==='quincenal'?m*2:m;
+const fl=()=>freq==='quincenal'?'/quincena':'/mes';
+
+function filas(plazos,contado,isFF,eng){
+  return plazos.map(p=>{
+    const base=isFF?(contado-(eng||0)):contado;
+    const total=isFF?((eng||0)+base*p.i):contado/p.f;
+    return{...p,total,extra:total-contado,pago:total/pers(p.m)};
+  });
+}
+
+function rFilas(rows,contado){
+  const minP=Math.min(...rows.map(r=>r.pago));
+  return rows.map(r=>{
+    const best=rows.length>1&&Math.abs(r.pago-minP)<.01;
+    return`<div class="row${best?' best':''}">
+      <span class="row-tag">${r.l}</span>
+      <span class="row-pago">${fmt(r.pago)}<span class="freq-label">${fl()}</span></span>
+      <span class="row-total">Total: ${fmt(r.total)} <span style="font-size:11px">(+${pct(r.extra,contado)})</span></span>
+      ${best?'<span class="badge b-green">Menor pago</span>':''}
+      ${r.rest?'<span class="badge b-amber">Solo auth.</span>':''}
+    </div>`;
+  }).join('');
+}
+
+function tips(contado,tipo){
+  const d={
+    mp:[{c:'tg',t:`Contado ahorra <b>${fmt(contado/0.91-contado)}</b> vs el plan más corto.`},{c:'tb',t:`3 meses es la opción más barata a plazos — solo +${pct(contado/0.91-contado,contado)} extra.`},{c:'ta',t:`12 meses cuesta <b>${fmt(contado/0.82-contado/0.91)}</b> más que a 3 meses.`}],
+    cp:[{c:'tg',t:`Caja Popular siempre más barata que Mercado Pago en plazos equivalentes.`},{c:'tb',t:`6 meses en CP (+4%) vs MP (+9.9%) — ahorra <b>${fmt(contado/0.91-contado/0.96)}</b>.`},{c:'ta',t:`24 meses (+${pct(contado/0.86-contado,contado)}) — buena opción para equipos de alto valor.`}],
+    ff_con:[{c:'tg',t:`Con 50% de enganche, 3 pagos agrega solo +2.5% — casi como pagar de contado.`},{c:'tb',t:`Mayor enganche = menor saldo financiado = menos interés total.`},{c:'tp',t:`9 pagos solo para equipos autorizados. Verificar con Chief.`}],
+    ff_sin:[{c:'tg',t:`Sin enganche el interés se cobra sobre el capital total: 3p +5%, 6p +10%, 9p +15%.`},{c:'tb',t:`Solo para clientes de confianza comprobada.`},{c:'ta',t:`Considera garantía si el monto es alto.`}],
+  };
+  return`<div class="tips">${(d[tipo]||[]).map(t=>`<div class="tip"><div class="tip-dot ${t.c}"></div><span>${t.t}</span></div>`).join('')}</div>`;
+}
+
+function expBtns(){
+  return`<div class="exp-row">
+    <button type="button" class="exp-btn" id="btnPDF">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Exportar PDF
+    </button>
+    <button type="button" class="exp-btn" id="btnIMG">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Exportar imagen
+    </button>
+  </div>`;
+}
+
+function bind(contado){
+  const bp=document.getElementById('btnPDF'),bi=document.getElementById('btnIMG');
+  if(bp)bp.onclick=()=>genPDF(contado);
+  if(bi)bi.onclick=()=>genIMG(contado);
+}
+
+function renderMP(c){
+  const rows=filas(MP,c,false);
+  const t=c/0.97;
+  document.getElementById('s-mp').innerHTML=`<div class="card">
+    <div class="card-title">Mercado Pago</div>
+    <div class="stats">
+      <div class="stat hi"><div class="stat-label">Contado</div><div class="stat-val">${fmt(c)}</div><div class="stat-sub">Precio base</div></div>
+      <div class="stat"><div class="stat-label">Solo tarjeta</div><div class="stat-val">${fmt(t)}</div><div class="stat-sub">+${pct(t-c,c)}</div></div>
+      <div class="stat"><div class="stat-label">Acepta</div><div class="stat-val" style="font-size:13px;padding-top:2px">Citi · Amex</div></div>
+    </div>
+    ${rFilas(rows,c)}${tips(c,'mp')}${expBtns()}</div>`;
+  bind(c);
+}
+
+function renderCP(c){
+  const rows=filas(CP,c,false);
+  document.getElementById('s-cp').innerHTML=`<div class="card">
+    <div class="card-title">Caja Popular</div>
+    <div class="stats">
+      <div class="stat hi"><div class="stat-label">Contado</div><div class="stat-val">${fmt(c)}</div><div class="stat-sub">Precio base</div></div>
+      <div class="stat"><div class="stat-label">Menor extra</div><div class="stat-val">${fmt(c/0.96-c)}</div><div class="stat-sub">A 6 meses (+4%)</div></div>
+      <div class="stat"><div class="stat-label">Mayor plazo</div><div class="stat-val">24 meses</div><div class="stat-sub">${fmt(c/0.86/pers(24))}${fl()}</div></div>
+    </div>
+    ${rFilas(rows,c)}${tips(c,'cp')}${expBtns()}</div>`;
+  bind(c);
+}
+
+function renderFF(c){
+  const eng=ffMod==='con50'?c*.5:ffMod==='con25'?c*.25:0;
+  const plazos=ffMod==='sin'?FF_SIN:FF_CON;
+  const rows=filas(plazos,c,true,eng);
+  let html=`<div class="card"><div class="card-title">Friends &amp; Family</div>
+  <div class="ff-tabs">
+    <button type="button" class="ff-tab${ffMod==='con50'?' on':''}" data-ff="con50">50% eng.</button>
+    <button type="button" class="ff-tab${ffMod==='con25'?' on':''}" data-ff="con25">25% eng.</button>
+    <button type="button" class="ff-tab${ffMod==='sin'?' on':''}" data-ff="sin">Sin enganche</button>
+  </div>`;
+  if(ffMod==='sin'){
+    html+=`<div class="stats">
+      <div class="stat hi"><div class="stat-label">Sin enganche</div><div class="stat-val">${fmt(c)}</div><div class="stat-sub">Capital total</div></div>
+      <div class="stat"><div class="stat-label">3 pagos (+5%)</div><div class="stat-val">${fmt(c*1.05/pers(3))}</div><div class="stat-sub">${fl()}</div></div>
+      <div class="stat"><div class="stat-label">9 pagos (+15%)</div><div class="stat-val">${fmt(c*1.15/pers(9))}</div><div class="stat-sub">${fl()}</div></div>
+    </div>`;
+    html+=rFilas(rows,c)+`<div class="nota">Interés sobre capital total. Disponible 3, 6 y 9 pagos.</div>`;
+    html+=tips(c,'ff_sin');
+  } else {
+    html+=`<div class="stats">
+      <div class="stat hi"><div class="stat-label">Enganche ${ffMod==='con50'?'50%':'25%'}</div><div class="stat-val">${fmt(eng)}</div><div class="stat-sub">Pago inicial</div></div>
+      <div class="stat"><div class="stat-label">Saldo a financiar</div><div class="stat-val">${fmt(c-eng)}</div><div class="stat-sub">Base del interés</div></div>
+      <div class="stat"><div class="stat-label">Precio contado</div><div class="stat-val">${fmt(c)}</div><div class="stat-sub">Referencia</div></div>
+    </div>`;
+    html+=rFilas(rows,c)+`<div class="nota">*9 pagos solo para equipos autorizados.</div>`;
+    html+=tips(c,'ff_con');
+  }
+  html+=expBtns()+'</div>';
+  document.getElementById('s-ff').innerHTML=html;
+  document.querySelectorAll('.ff-tab').forEach(b=>b.onclick=()=>{ffMod=b.dataset.ff;renderFF(c);});
+  bind(c);
+}
+
+function renderCmp(c){
+  const ops=[
+    {n:'MP 3m',tag:'mp',m:3,total:c/0.91},{n:'MP 6m',tag:'mp',m:6,total:c/0.88},{n:'MP 12m',tag:'mp',m:12,total:c/0.82},
+    {n:'CP 6m',tag:'cp',m:6,total:c/0.96},{n:'CP 12m',tag:'cp',m:12,total:c/0.92},{n:'CP 24m',tag:'cp',m:24,total:c/0.86},
+    {n:'F&F 3p 50%',tag:'ff',m:3,total:c*.5+(c*.5)*1.05},{n:'F&F 6p 50%',tag:'ff',m:6,total:c*.5+(c*.5)*1.10},
+    {n:'F&F 3p s/e',tag:'ff',m:3,total:c*1.05},{n:'F&F 6p s/e',tag:'ff',m:6,total:c*1.10},{n:'F&F 9p s/e',tag:'ff',m:9,total:c*1.15},
+  ].map(o=>({...o,pago:o.total/pers(o.m),extra:o.total-c})).sort((a,b)=>a.total-b.total);
+  const clr={mp:{bg:'#EBF2FF',tx:'#1A6EFF'},cp:{bg:'#DCFCE7',tx:'#16A34A'},ff:{bg:'#EDE9FE',tx:'#7C3AED'}};
+  let html=`<div class="card"><div class="card-title">Comparación — todas las opciones ordenadas por costo</div>`;
+  ops.forEach((o,i)=>{
+    html+=`<div class="row${i===0?' best':''}">
+      <span class="row-tag" style="font-size:12px">${o.n}</span>
+      <span class="row-pago">${fmt(o.pago)}<span class="freq-label">${fl()}</span></span>
+      <span class="row-total">Total: ${fmt(o.total)}</span>
+      <span class="badge" style="background:${clr[o.tag].bg};color:${clr[o.tag].tx}">+${pct(o.extra,c)}</span>
+      ${i===0?'<span class="badge b-green">Mejor</span>':''}
+    </div>`;
+  });
+  const mejor=ops[0],peor=ops[ops.length-1];
+  html+=`<div class="tips">
+    <div class="tip"><div class="tip-dot tg"></div><span>La opción más barata es <b>${mejor.n}</b> — ${fmt(mejor.total)} total (+${pct(mejor.extra,c)}).</span></div>
+    <div class="tip"><div class="tip-dot tb"></div><span>Contado ahorra hasta <b>${fmt(peor.total-c)}</b> vs el plan más caro.</span></div>
+  </div>${expBtns()}</div>`;
+  document.getElementById('s-cmp').innerHTML=html;
+  bind(c);
+}
+
+function getPDFData(c){
+  const tab=document.querySelector('.tab.on').dataset.tab;
+  const tabNames={mp:'Mercado Pago',cp:'Caja Popular',ff:'Friends & Family',cmp:'Comparación general'};
+  let rows=[];
+  if(tab==='mp'){const r=filas(MP,c,false);const mn=Math.min(...r.map(x=>x.pago));rows=r.map(x=>({l:x.l,p:fmt(x.pago)+fl(),t:fmt(x.total),e:'+'+pct(x.extra,c),best:Math.abs(x.pago-mn)<.01}));}
+  else if(tab==='cp'){const r=filas(CP,c,false);const mn=Math.min(...r.map(x=>x.pago));rows=r.map(x=>({l:x.l,p:fmt(x.pago)+fl(),t:fmt(x.total),e:'+'+pct(x.extra,c),best:Math.abs(x.pago-mn)<.01}));}
+  else if(tab==='ff'){const eng=ffMod==='con50'?c*.5:ffMod==='con25'?c*.25:0;const pl=ffMod==='sin'?FF_SIN:FF_CON;const r=filas(pl,c,true,eng);const mn=Math.min(...r.map(x=>x.pago));rows=r.map(x=>({l:x.l+(x.rest?' *':''),p:fmt(x.pago)+fl(),t:fmt(x.total),e:'+'+pct(x.extra,c),best:Math.abs(x.pago-mn)<.01}));}
+  else{const ops=[
+    {n:'MP 3m',m:3,total:c/0.91},{n:'MP 6m',m:6,total:c/0.88},{n:'MP 12m',m:12,total:c/0.82},
+    {n:'CP 6m',m:6,total:c/0.96},{n:'CP 12m',m:12,total:c/0.92},{n:'CP 24m',m:24,total:c/0.86},
+    {n:'F&F 3p 50%',m:3,total:c*.5+(c*.5)*1.05},{n:'F&F 6p 50%',m:6,total:c*.5+(c*.5)*1.10},
+    {n:'F&F 3p s/e',m:3,total:c*1.05},{n:'F&F 6p s/e',m:6,total:c*1.10},{n:'F&F 9p s/e',m:9,total:c*1.15},
+  ].map(o=>({...o,pago:o.total/pers(o.m),extra:o.total-c})).sort((a,b)=>a.total-b.total);
+  rows=ops.map((o,i)=>({l:o.n,p:fmt(o.pago)+fl(),t:fmt(o.total),e:'+'+pct(o.extra,c),best:i===0}));}
+  return{tab,tabName:tabNames[tab],rows,nom:document.getElementById('nom').value||'Equipo',fecha:new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'})};
+}
+
+function genPDF(c){
+  if(!c){alert('Ingresa el precio primero.');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210,mg=18;let y=20;
+  const {nom,tabName,fecha,rows}=getPDFData(c);
+  doc.setFillColor(26,110,255);doc.rect(0,0,W,32,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(22);doc.setFont('helvetica','bold');doc.text('Wetech',mg,15);
+  doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text('Cotizador de financiamiento',mg,23);
+  doc.text(fecha,W-mg,23,{align:'right'});
+  y=44;doc.setTextColor(17,24,39);doc.setFontSize(15);doc.setFont('helvetica','bold');doc.text(nom,mg,y);y+=7;
+  doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
+  doc.text(`Precio de contado: ${fmt(c)}   ·   Pagos: ${freq}`,mg,y);y+=11;
+  doc.setFillColor(235,242,255);doc.roundedRect(mg,y,W-mg*2,9,2,2,'F');
+  doc.setTextColor(13,77,179);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text(tabName,mg+4,y+6);y+=16;
+  doc.setTextColor(156,163,175);doc.setFontSize(9);
+  doc.text('Plazo',mg+2,y);doc.text(`Pago ${freq}`,mg+65,y);doc.text('Total',mg+115,y);doc.text('Diferencia',mg+152,y);
+  y+=4;doc.setDrawColor(229,231,235);doc.line(mg,y,W-mg,y);y+=5;
+  rows.forEach(r=>{
+    if(r.best){doc.setFillColor(220,252,231);doc.roundedRect(mg,y-4,W-mg*2,10,2,2,'F');}
+    doc.setFont('helvetica',r.best?'bold':'normal');
+    doc.setTextColor(r.best?22:75,r.best?163:85,r.best?74:99);
+    doc.setFontSize(10);doc.text(r.l,mg+2,y+3);
+    doc.setTextColor(17,24,39);doc.text(r.p,mg+65,y+3);
+    doc.setTextColor(100,100,100);doc.text(r.t,mg+115,y+3);doc.text(r.e,mg+152,y+3);
+    if(r.best){doc.setTextColor(22,163,74);doc.setFont('helvetica','bold');doc.text('Menor pago',W-mg-2,y+3,{align:'right'});}
+    y+=10;
+  });
+  y+=6;doc.setFillColor(249,250,251);doc.roundedRect(mg,y,W-mg*2,16,2,2,'F');
+  doc.setTextColor(156,163,175);doc.setFontSize(8.5);
+  doc.text('Precios sujetos a disponibilidad. Tasas aplicadas por proveedor.',mg+4,y+6);
+  doc.text('Cotización válida 24 horas.',mg+4,y+11);
+  doc.setTextColor(26,110,255);doc.setFont('helvetica','bold');doc.text('wetech.mx',W-mg-2,y+11,{align:'right'});
+  const eq=(document.getElementById('nom').value||'equipo').replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
+  doc.save(`Cotizacion_Wetech_${eq}.pdf`);
+}
+
+function genIMG(c){
+  if(!c){alert('Ingresa el precio primero.');return;}
+  const {nom,tabName,fecha,rows}=getPDFData(c);
+  const sc=2,cw=900,rH=50,hH=210,fH=70;
+  const canvas=document.createElement('canvas');
+  canvas.width=cw*sc;canvas.height=(hH+rows.length*rH+fH)*sc;
+  const ctx=canvas.getContext('2d');ctx.scale(sc,sc);
+  const W=cw,mg=40;
+  ctx.fillStyle='#1A6EFF';ctx.fillRect(0,0,W,88);
+  ctx.fillStyle='#fff';ctx.font='bold 26px DM Sans,Arial';ctx.fillText('Wetech',mg,40);
+  ctx.font='15px DM Sans,Arial';ctx.fillStyle='rgba(255,255,255,.8)';ctx.fillText('Cotizador de financiamiento',mg,62);
+  ctx.fillStyle='rgba(255,255,255,.6)';ctx.font='13px DM Sans,Arial';ctx.textAlign='right';ctx.fillText(fecha,W-mg,62);ctx.textAlign='left';
+  let y=106;
+  ctx.fillStyle='#111827';ctx.font='bold 20px DM Sans,Arial';ctx.fillText(nom,mg,y);y+=26;
+  ctx.fillStyle='#9CA3AF';ctx.font='14px DM Sans,Arial';ctx.fillText(`Precio de contado: ${fmt(c)}   ·   Pagos: ${freq}`,mg,y);y+=18;
+  ctx.fillStyle='#EBF2FF';rRect(ctx,mg,y,W-mg*2,32,6);ctx.fill();
+  ctx.fillStyle='#0D4DB3';ctx.font='bold 13px DM Sans,Arial';ctx.fillText(tabName,mg+12,y+21);y+=48;
+  ctx.fillStyle='#9CA3AF';ctx.font='12px DM Sans,Arial';
+  ctx.fillText('Plazo',mg+8,y);ctx.fillText(`Pago ${freq}`,mg+250,y);ctx.fillText('Total',mg+430,y);ctx.fillText('Extra',mg+610,y);
+  y+=8;ctx.strokeStyle='#E5E7EB';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(mg,y);ctx.lineTo(W-mg,y);ctx.stroke();y+=14;
+  rows.forEach(r=>{
+    if(r.best){ctx.fillStyle='#DCFCE7';rRect(ctx,mg,y-16,W-mg*2,42,6);ctx.fill();}
+    ctx.fillStyle=r.best?'#166534':'#111827';ctx.font=`${r.best?'bold ':''}15px DM Sans,Arial`;ctx.fillText(r.l,mg+8,y+4);
+    ctx.fillStyle='#111827';ctx.font='bold 16px DM Mono,monospace';ctx.fillText(r.p,mg+250,y+4);
+    ctx.fillStyle='#6B7280';ctx.font='14px DM Mono,monospace';ctx.fillText(r.t,mg+430,y+4);ctx.fillText(r.e,mg+610,y+4);
+    if(r.best){ctx.fillStyle='#16A34A';ctx.font='bold 12px DM Sans,Arial';ctx.textAlign='right';ctx.fillText('Menor pago',W-mg-8,y+4);ctx.textAlign='left';}
+    y+=rH;
+  });
+  y+=10;ctx.fillStyle='#F9FAFB';rRect(ctx,mg,y,W-mg*2,52,6);ctx.fill();
+  ctx.fillStyle='#9CA3AF';ctx.font='12px DM Sans,Arial';
+  ctx.fillText('Precios sujetos a disponibilidad. Tasas sin intereses aplicadas por proveedor.',mg+12,y+20);
+  ctx.fillText('Cotización válida por 24 horas.',mg+12,y+38);
+  ctx.fillStyle='#1A6EFF';ctx.font='bold 13px DM Sans,Arial';ctx.textAlign='right';ctx.fillText('Wetech',W-mg-8,y+38);ctx.textAlign='left';
+  canvas.toBlob(blob=>{
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    const eq=(document.getElementById('nom').value||'equipo').replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
+    a.href=url;a.download=`Cotizacion_Wetech_${eq}.png`;a.click();URL.revokeObjectURL(url);
+  },'image/png');
+}
+
+function rRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+document.querySelectorAll('.seg[data-freq]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.seg[data-freq]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');freq=b.dataset.freq;calcular();
+});
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('vis'));
+  document.getElementById('s-'+b.dataset.tab).classList.add('vis');calcular();
+});
+document.getElementById('pc').addEventListener('input',calcular);
+document.getElementById('nom').addEventListener('input',calcular);
+
+function calcular(){
+  const c=parseFloat(document.getElementById('pc').value)||0;
+  if(!c){['mp','cp','ff','cmp'].forEach(t=>document.getElementById('s-'+t).innerHTML='<div class="empty">Ingresa el precio de contado para calcular</div>');return;}
+  const tab=document.querySelector('.tab.on').dataset.tab;
+  if(tab==='mp')renderMP(c);else if(tab==='cp')renderCP(c);else if(tab==='ff')renderFF(c);else renderCmp(c);
+}
+calcular();
+</script>
+</body>
+</html>
