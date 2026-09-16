@@ -528,7 +528,7 @@ function render(){
 function mkCard(eq,chipCls,chipTxt,isLiq,cgCls){
   let modelo=eq.modelo.replace(/ CHIP A/gi,'').replace(/ CHIP NUEVO/gi,'').replace(/ ESIM A/gi,'').replace(/ ESIM NSC/gi,'').replace(/ SEMINUEVO/gi,'').trim();
   const precio=eq.precio?'$'+Math.round(eq.precio).toLocaleString('es-MX'):'—';
-  const fid=eq.fotoId||getFotoId(eq.modelo,eq.color)||'';
+  const fid=fotoPara(eq)||'';
   const imgH=fid?`<img src="${driveImg(fid)}" alt="${modelo}" loading="lazy" onerror="this.style.display='none'">`:`<span class="card-img-ph">${CAT_EMOJI[eq.categoria]||'📦'}</span>`;
   const barCls=isLiq?'liq-bar':'';
   const eqJson=encodeURIComponent(JSON.stringify({modelo:eq.modelo,color:eq.color,capacidad:eq.capacidad,estado:eq.estado,precio:eq.precio}));
@@ -729,6 +729,85 @@ function renderSobrepedido(){
   main.innerHTML=html;
 }
 
+// ══ FOTOS AUTOMÁTICAS DESDE DRIVE (carpeta IMAGENES WETECH) ══════════
+// Nombra cada foto: MODELO + COLOR  (ej. "IPHONE 18 PRO MAX NARANJA.png")
+let FOTOS_DRIVE=[];
+const FOTO_BRANDS={iphone:'iphone',ipad:'ipad',macbook:'macbook',mac:'macbook',watch:'watch',airpods:'airpods',airpod:'airpods',samsung:'samsung',galaxy:'samsung'};
+const FOTO_TIERS=['pro','max','plus','mini','air','ultra','se','neo','fe'];
+const FOTO_EXCL=['pro','mini','air','ultra','se','neo','fe']; // si la foto lo dice, el equipo también debe decirlo
+const FOTO_COLORS={negro:['negro','black','midnight','medianoche','grafito'],blanco:['blanco','white'],plata:['plata','silver'],
+  azul:['azul','blue','sky','skyblue','cielo','indigo','ultramarino'],dorado:['dorado','gold'],naranja:['naranja','orange','cosmico'],
+  rosa:['rosa','pink'],morado:['morado','lila','purpura','purple','lavanda'],natural:['natural'],desierto:['desierto','desert'],
+  starlight:['starlight','estelar'],gris:['gris','espacial','space','gray','grey'],verde:['verde','green','menta','mint','salvia'],
+  rojo:['rojo','red'],amarillo:['amarillo','yellow']};
+const FOTO_NOISE=new Set(['y','o','de','con','sin','chip','esim','nsc','clase','a','nuevo','nueva','seminuevo','exhibicion','at','t','att','apple','generacion','png','jpg','jpeg','webp']);
+
+function fotoTokens(s){
+  s=(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()
+    .replace(/\.(png|jpe?g|webp|heic)$/,'')
+    .replace(/mac\s*book/g,'macbook').replace(/air\s*pods?/g,'airpods')
+    .replace(/\d+\s*(pulgadas|pulg|"|gb|tb|mm)/g,' ')
+    .replace(/(iphone|ipad|galaxy)(\d)/g,'$1 $2');
+  return s.split(/[^a-z0-9]+/).filter(t=>t&&!FOTO_NOISE.has(t));
+}
+function fotoInfo(s){
+  const tk=fotoTokens(s),i={brand:'',vers:new Set(),tiers:new Set(),colors:new Set(),raw:new Set(tk),n:tk.length};
+  for(const t of tk){
+    if(FOTO_BRANDS[t])i.brand=FOTO_BRANDS[t];
+    else if(FOTO_TIERS.includes(t))i.tiers.add(t);
+    else if(/^(\d{1,2}|m\d|s\d{2})$/.test(t))i.vers.add(t);
+    for(const k in FOTO_COLORS)if(FOTO_COLORS[k].includes(t))i.colors.add(k);
+  }
+  if(!i.brand&&i.vers.size)i.brand='iphone';
+  return i;
+}
+function matchFotoDrive(modelo,color){
+  if(!FOTOS_DRIVE.length)return null;
+  const p=fotoInfo(modelo),pc=fotoInfo(color);
+  if(!p.brand)return null;
+  let best=null;
+  for(const f of FOTOS_DRIVE){
+    const fi=f.info;
+    if(fi.brand!==p.brand)continue;
+    // generación / chip
+    if(p.vers.size&&fi.vers.size){if(![...p.vers].some(v=>fi.vers.has(v)))continue;}
+    else if(p.brand==='iphone'&&(p.vers.size||fi.vers.size))continue;
+    // variante (Pro, Max, Plus, Air, Ultra...)
+    let ok=true;
+    for(const t of p.tiers){if(!fi.tiers.has(t)&&!(t==='max'&&fi.tiers.has('pro'))){ok=false;break;}}
+    for(const t of FOTO_EXCL){if(fi.tiers.has(t)&&!p.tiers.has(t)){ok=false;break;}}
+    if(!ok)continue;
+    // color
+    let cs=0;for(const c of pc.colors)if(fi.colors.has(c))cs+=2;
+    for(const t of pc.raw)if(fi.raw.has(t))cs+=1;
+    const strict=pc.colors.size>0&&[...pc.colors].some(c=>fi.colors.has(c));
+    const score=(strict?100:0)+cs*10-fi.n;
+    if(!best||score>best.score)best={id:f.id,strict,score};
+  }
+  return best;
+}
+function fotoPara(eq){
+  const r=matchFotoDrive(eq.modelo,eq.color);
+  if(r&&r.strict)return r.id;                       // foto exacta (modelo + color) en Drive
+  const old=eq.fotoId||getFotoId(eq.modelo,eq.color); // lógica anterior
+  if(old)return old;
+  return r?r.id:'';                                  // mismo modelo, otro color
+}
+function fetchFotos(){
+  const url=SCRIPT_URL+'?action=fotos';
+  const done=d=>{
+    if(!d||!Array.isArray(d.fotos))return;
+    FOTOS_DRIVE=d.fotos.map(f=>({id:f.id,info:fotoInfo(f.n)}));
+    if(allEq.length&&currentCat!=='sobrepedido')render();
+  };
+  fetch(url).then(r=>r.json()).then(done).catch(()=>{
+    const cb='wtft'+Date.now();
+    window[cb]=d=>{delete window[cb];document.getElementById('_sf')?.remove();done(d)};
+    const s=document.createElement('script');s.id='_sf';s.src=url+'&callback='+cb;document.head.appendChild(s);
+  });
+}
+
+fetchFotos();
 fetchData();
 </script>
 </body>
