@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d2659">
+<meta name="robots" content="noindex,nofollow">
+<title>Wetech — Validar Pagos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0d2659;--navy2:#1a3a7a;--accent:#1d4ed8;--bg:#f5f7fc;--card:#fff;--txt:#0d1b3e;--muted:#6b7a99;--brd:#dfe5f0;
+--green:#16a34a;--greenbg:#dcfce7;--red:#dc2626;--redbg:#fee2e2;--yellow:#b45309;--yellowbg:#fef3c7;--blue:#1d4ed8;--bluebg:#dbeafe}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:16px}
+.hidden{display:none!important}
+
+/* Login */
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,var(--navy),var(--navy2))}
+.login-box{background:#fff;border-radius:20px;padding:32px 24px;width:100%;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.brand{font-family:'Bebas Neue',sans-serif;letter-spacing:3px;font-size:34px;color:var(--navy);line-height:1}
+.brand span{color:var(--accent)}
+.sub{color:var(--muted);font-size:13px;margin:6px 0 24px}
+.pin{width:100%;text-align:center;font-size:28px;letter-spacing:12px;padding:14px;border:2px solid var(--brd);border-radius:14px;outline:none}
+.pin:focus{border-color:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:12px;padding:13px 18px;font-weight:700;font-size:15px;transition:.15s}
+.btn:disabled{opacity:.5;cursor:default}
+.btn-pri{background:var(--accent);color:#fff}.btn-pri:hover:not(:disabled){background:#1e40af}
+.btn-ghost{background:#eef2fb;color:var(--navy)}
+.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}
+.btn-block{width:100%}
+.err{color:var(--red);font-size:13px;margin-top:10px;min-height:18px}
+
+/* Header */
+.hdr{background:var(--navy);color:#fff;position:sticky;top:0;z-index:20}
+.hdr-in{max-width:900px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hdr .brand{color:#fff;font-size:24px}
+.who{font-size:12px;opacity:.85;display:flex;align-items:center;gap:10px}
+.who button{background:rgba(255,255,255,.12);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:12px}
+
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--brd);border-radius:14px;padding:12px}
+.stat b{display:block;font-size:22px}.stat small{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.tabs{display:flex;gap:6px;overflow-x:auto;flex:1}
+.tab{border:1px solid var(--brd);background:#fff;border-radius:20px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.tab.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.search{width:100%;padding:11px 14px;border:1px solid var(--brd);border-radius:12px;margin-bottom:12px;background:#fff;outline:none}
+.search:focus{border-color:var(--accent)}
+
+/* Lista */
+.list{display:flex;flex-direction:column;gap:10px}
+.pago{background:var(--card);border:1px solid var(--brd);border-radius:14px;padding:14px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;cursor:pointer;transition:.15s;text-align:left;width:100%;color:inherit;font:inherit}
+.pago:hover{border-color:var(--accent);box-shadow:0 4px 14px rgba(29,78,216,.08)}
+.p-cli{font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-monto{font-weight:700;font-size:17px;text-align:right}
+.p-meta{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;padding:3px 9px;white-space:nowrap;justify-self:end}
+.b-POR{background:var(--bluebg);color:var(--blue)}
+.b-PEN{background:var(--yellowbg);color:var(--yellow)}
+.b-LIQ,.b-CON{background:var(--greenbg);color:var(--green)}
+.b-NO{background:var(--redbg);color:var(--red)}
+.empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:14px}
+.fab{position:fixed;right:16px;bottom:16px;z-index:30;box-shadow:0 10px 30px rgba(29,78,216,.4);border-radius:30px;padding:15px 22px}
+
+/* Modal */
+.ov{position:fixed;inset:0;background:rgba(13,27,62,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:640px){.ov{align-items:center}}
+.modal{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:20px 18px 24px}
+@media(min-width:640px){.modal{border-radius:20px}}
+.m-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.m-hdr h2{font-size:18px}
+.x{background:#eef2fb;border:none;border-radius:50%;width:34px;height:34px;font-size:18px;color:var(--navy)}
+.fld{margin-bottom:12px}
+.fld label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em}
+.fld input,.fld select,.fld textarea{width:100%;padding:11px 12px;border:1px solid var(--brd);border-radius:10px;background:#fff;outline:none;color:var(--txt)}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--accent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.warn{background:var(--redbg);color:var(--red);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600;margin-bottom:12px}
+.info{background:var(--yellowbg);color:var(--yellow);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:12px}
+
+.det{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;margin-bottom:16px}
+.det dt{color:var(--muted);font-size:12px;font-weight:600;padding-top:2px}
+.det dd{font-weight:600;word-break:break-all}
+.det a{color:var(--accent)}
+.box{border:1px solid var(--brd);border-radius:14px;padding:14px;margin-bottom:14px}
+.box h3{font-size:14px;margin-bottom:4px}
+.box p{font-size:12px;color:var(--muted);margin-bottom:10px}
+.copy{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px dashed var(--brd)}
+.copy:first-of-type{border-top:none}
+.copy small{display:block;color:var(--muted);font-size:11px;font-weight:600}
+.copy b{font-size:14px;word-break:break-all}
+.copy button{background:#eef2fb;color:var(--navy);border:none;border-radius:8px;padding:7px 11px;font-size:12px;font-weight:700;white-space:nowrap}
+.copy button.ok{background:var(--greenbg);color:var(--green)}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:30px;font-size:14px;font-weight:600;z-index:80;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="login">
+  <div class="login-box">
+    <div class="brand">WE<span>TECH</span></div>
+    <div class="sub">Validación de pagos</div>
+    <input id="pin" class="pin" type="password" inputmode="numeric" maxlength="8" placeholder="••••" autocomplete="off">
+    <div class="err" id="login-err"></div>
+    <button id="login-btn" class="btn btn-pri btn-block" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <header class="hdr"><div class="hdr-in">
+    <div class="brand">WE<span style="color:#60a5fa">TECH</span> PAGOS</div>
+    <div class="who"><span id="who"></span><button onclick="refresh()" title="Actualizar">↻</button><button onclick="logout()">Salir</button></div>
+  </div></header>
+
+  <main class="wrap">
+    <div class="stats">
+      <div class="stat"><small>Por validar</small><b id="s-por">0</b></div>
+      <div class="stat"><small>Validados hoy</small><b id="s-hoy">0</b></div>
+      <div class="stat"><small>No encontrados</small><b id="s-no" style="color:var(--red)">0</b></div>
+    </div>
+    <div class="bar"><div class="tabs" id="tabs"></div></div>
+    <input class="search" id="q" placeholder="Buscar cliente, clave, monto, equipo…" oninput="render()">
+    <div class="list" id="list"><div class="empty">Cargando…</div></div>
+  </main>
+  <button class="btn btn-pri fab" onclick="openNew()">＋ Registrar pago</button>
+</div>
+
+<div id="modal-root"></div>
+
+<script>
+// ═══ CONFIG ═══════════════════════════════════════════════════
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzscVjeBO7YmROEdlSkfEXVlSSMeznWFwhJCsOW7bYmffYII8J7hIQAoICiBBTEtCD18Q/exec';
+
+const BANCOS = ['BBVA MEXICO','BANAMEX','SANTANDER','BANORTE','HSBC','SCOTIABANK','INBURSA','BANCO AZTECA','BANCOPPEL',
+  'BANREGIO','HEY BANCO','BANBAJIO','AFIRME','NU MEXICO','MERCADO PAGO W','SPIN BY OXXO','STP','KLAR','ALBO','CUENCA',
+  'BANCO WALMART','COMPARTAMOS','BANCREA','OTRO'];
+const CONCEPTOS = ['Venta contado','Enganche crédito','Abono crédito','Apartado','Otro'];
+const E = {POR:'POR VALIDAR',PEN:'PENDIENTE PEDRO',LIQ:'LIQUIDADO',CON:'CONFIRMADO',NO:'NO ENCONTRADO'};
+const TABS = [
+  {k:'pend',l:'Pendientes',f:p=>[E.POR,E.PEN,E.NO].includes(p.estatus)},
+  {k:'ok',l:'Validados',f:p=>[E.LIQ,E.CON].includes(p.estatus)},
+  {k:'no',l:'No encontrados',f:p=>p.estatus===E.NO},
+  {k:'all',l:'Todos',f:()=>true},
+];
+
+let S = {pin:'',rol:'',nombre:'',clabe:'',receptor:'BBVA MEXICO',pagos:[],tab:'pend'};
+
+// ═══ API ══════════════════════════════════════════════════════
+async function api(action, data={}){
+  if(SCRIPT_URL.startsWith('PEGA_')) throw new Error('Falta configurar SCRIPT_URL en pagos.html');
+  const r = await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({...data,action,pin:S.pin})});
+  const j = await r.json();
+  if(j.auth===false){logout();throw new Error('Sesión vencida, vuelve a entrar');}
+  return j;
+}
+
+// ═══ LOGIN ════════════════════════════════════════════════════
+async function doLogin(){
+  const pin=document.getElementById('pin').value.trim(), err=document.getElementById('login-err'), b=document.getElementById('login-btn');
+  if(!pin){err.textContent='Escribe tu PIN';return;}
+  err.textContent=''; b.disabled=true; b.innerHTML='<span class="spin"></span>';
+  S.pin=pin;
+  try{
+    const j=await api('login');
+    if(!j.ok){err.textContent=j.error||'PIN incorrecto';S.pin='';return;}
+    Object.assign(S,{rol:j.rol,nombre:j.nombre,clabe:j.clabe,receptor:j.receptor});
+    try{sessionStorage.setItem('wtp',pin)}catch(e){}
+    startApp();
+  }catch(e){err.textContent=e.message;S.pin='';}
+  finally{b.disabled=false;b.textContent='Entrar';}
+}
+document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+function logout(){try{sessionStorage.removeItem('wtp')}catch(e){} S.pin='';location.reload();}
+
+function startApp(){
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('who').textContent=S.nombre;
+  refresh();
+}
+
+// ═══ DATOS ════════════════════════════════════════════════════
+async function refresh(){
+  try{
+    const j=await api('list');
+    if(!j.ok)throw new Error(j.error);
+    S.pagos=j.pagos||[]; render();
+  }catch(e){document.getElementById('list').innerHTML=`<div class="empty">⚠️ ${esc(e.message)}</div>`;}
+}
+
+function render(){
+  const hoy=new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'});
+  document.getElementById('s-por').textContent=S.pagos.filter(p=>p.estatus===E.POR||p.estatus===E.PEN).length;
+  document.getElementById('s-hoy').textContent=S.pagos.filter(p=>[E.LIQ,E.CON].includes(p.estatus)&&(p.fecha_validacion||'').startsWith(hoy)).length;
+  document.getElementById('s-no').textContent=S.pagos.filter(p=>p.estatus===E.NO).length;
+
+  document.getElementById('tabs').innerHTML=TABS.map(t=>{
+    const n=S.pagos.filter(t.f).length;
+    return `<button class="tab ${S.tab===t.k?'on':''}" onclick="S.tab='${t.k}';render()">${t.l} · ${n}</button>`;
+  }).join('');
+
+  const q=document.getElementById('q').value.toLowerCase().trim();
+  const tab=TABS.find(t=>t.k===S.tab);
+  const list=S.pagos.filter(tab.f).filter(p=>!q||[p.cliente,p.clave_rastreo,p.referencia,p.monto,p.equipo_id,p.banco_emisor,p.id,p.concepto].join(' ').toLowerCase().includes(q));
+  const el=document.getElementById('list');
+  if(!list.length){el.innerHTML='<div class="empty">No hay pagos aquí.</div>';return;}
+  el.innerHTML=list.map(p=>`
+    <button class="pago" onclick="openDet('${p.id}')">
+      <div class="p-cli">${esc(p.cliente||'Sin nombre')}</div>
+      <div class="p-monto">${money(p.monto)}</div>
+      <div class="p-meta">${esc(p.banco_emisor)} · ${fmtFecha(p.fecha_pago)}${p.concepto?' · '+esc(p.concepto):''}</div>
+      <span class="badge ${badgeCls(p.estatus)}">${badgeTxt(p.estatus)}</span>
+      <div class="p-meta" style="grid-column:1/-1">${p.clave_rastreo?'🔑 '+esc(p.clave_rastreo):'Ref: '+esc(p.referencia||'—')} · ${esc(p.registro_por)}</div>
+    </button>`).join('');
+}
+
+// ═══ REGISTRAR ════════════════════════════════════════════════
+function openNew(){
+  const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/Mexico_City'});
+  modal(`
+    <div class="m-hdr"><h2>Registrar pago</h2><button class="x" onclick="closeModal()">✕</button></div>
+    <div id="f-warn"></div>
+    <div class="row2">
+      <div class="fld"><label>Fecha del pago</label><input id="f-fecha" type="date" value="${today}"></div>
+      <div class="fld"><label>Monto</label><input id="f-monto" type="text" inputmode="decimal" placeholder="$0.00"></div>
+    </div>
+    <div class="fld"><label>Banco que envía</label>
+      <select id="f-banco" onchange="chkBanco()"><option value="">Selecciona…</option>${BANCOS.map(b=>`<option>${b}</option>`).join('')}</select>
+      <div id="f-banco-info"></div>
+    </div>
+    <div class="fld"><label>Clave de rastreo</label><input id="f-clave" type="text" autocapitalize="characters" placeholder="Viene en el comprobante del cliente" oninput="chkDup()"></div>
+    <div class="fld"><label>Referencia / concepto numérico <span style="text-transform:none;font-weight:500">(opcional)</span></label><input id="f-ref" type="text" inputmode="numeric"></div>
+    <div class="fld"><label>Cliente</label><input id="f-cli" type="text" placeholder="Nombre del cliente"></div>
+    <div class="row2">
+      <div class="fld"><label>ID equipo</label><input id="f-eq" type="text" placeholder="Ej. Dc2ae1307"></div>
+      <div class="fld"><label>Concepto</label><select id="f-con">${CONCEPTOS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+    </div>
+    <div class="fld"><label>Foto del comprobante</label><input id="f-foto" type="file" accept="image/*,application/pdf"><div class="hint">Captura o PDF que mandó el cliente.</div></div>
+    <div class="fld"><label>Notas</label><textarea id="f-notas" rows="2"></textarea></div>
+    <div class="err" id="f-err"></div>
+    <button class="btn btn-pri btn-block" id="f-btn" onclick="saveNew()">Guardar pago</button>
+  `);
+}
+function chkBanco(){
+  const b=document.getElementById('f-banco').value, el=document.getElementById('f-banco-info');
+  el.innerHTML=/BBVA/.test(b)?'<div class="info" style="margin:8px 0 0">BBVA → BBVA no pasa por Banxico. Quedará <b>pendiente de que Pedro confirme</b>.</div>':'';
+}
+function chkDup(){
+  const c=normClave(document.getElementById('f-clave').value), w=document.getElementById('f-warn');
+  const d=c&&S.pagos.find(p=>normClave(p.clave_rastreo)===c);
+  w.innerHTML=d?`<div class="warn">⚠️ Esta clave ya se registró: ${esc(d.cliente)} · ${money(d.monto)} · ${fmtFecha(d.fecha_pago)} (${badgeTxt(d.estatus)})</div>`:'';
+}
+async function saveNew(){
+  const g=id=>document.getElementById(id), err=g('f-err'), b=g('f-btn');
+  const data={fecha_pago:g('f-fecha').value, monto:g('f-monto').value, banco_emisor:g('f-banco').value,
+    clave_rastreo:g('f-clave').value, referencia:g('f-ref').value, cliente:g('f-cli').value,
+    equipo_id:g('f-eq').value, concepto:g('f-con').value, notas:g('f-notas').value};
+  if(!data.fecha_pago||!data.monto||!data.banco_emisor){err.textContent='Fecha, monto y banco son obligatorios';return;}
+  if(!/BBVA/.test(data.banco_emisor)&&!data.clave_rastreo.trim()&&!data.referencia.trim()){err.textContent='Pon la clave de rastreo (o la referencia)';return;}
+  err.textContent=''; b.disabled=true; b.innerHTML='<span class="spin"></span> Guardando…';
+  try{
+    const f=g('f-foto').files[0];
+    if(f)data.comprobante=await fileToPayload(f);
+    const j=await api('create',data);
+    if(!j.ok){err.textContent=j.error;return;}
+    closeModal(); toast('Pago registrado ✅'); await refresh();
+    const p=S.pagos.find(x=>x.id===j.id); if(p)openDet(p.id);
+  }catch(e){err.textContent=e.message;}
+  finally{b.disabled=false;b.textContent='Guardar pago';}
+}
+
+// ═══ DETALLE / VALIDAR ════════════════════════════════════════
+function openDet(id){
+  const p=S.pagos.find(x=>x.id===id); if(!p)return;
+  const mismo=/BBVA/.test(p.banco_emisor), esPedro=S.rol==='pedro';
+  const validado=[E.LIQ,E.CON].includes(p.estatus);
+  let acc='';
+
+  if(p.estatus===E.PEN){
+    acc = esPedro ? `
+      <div class="box"><h3>Confirmar pago BBVA → BBVA</h3><p>Revisa en tu app BBVA que haya llegado ${money(p.monto)} de ${esc(p.cliente||'el cliente')}.</p>
+      <div class="fld"><label>Nota (opcional)</label><input id="v-nota" type="text"></div>
+      <div class="acts"><button class="btn btn-green" onclick="doVal('${id}','${E.CON}')">✅ Sí llegó</button><button class="btn btn-red" onclick="doVal('${id}','${E.NO}')">❌ No llegó</button></div></div>`
+    : `<div class="info">⏳ Pago BBVA → BBVA. Solo Pedro puede confirmarlo desde su banca.</div>`;
+  } else if(!validado || esPedro){
+    if(!mismo){
+      const fechaBx=fmtFecha(p.fecha_pago);
+      const crit=p.clave_rastreo?['Clave de rastreo',p.clave_rastreo]:['Número de referencia',p.referencia];
+      acc = `
+      <div class="box"><h3>1 · Consulta en Banxico</h3><p>Abre Banxico y captura estos datos (toca "Copiar" en cada uno).</p>
+        ${copyRow('Fecha de operación',fechaBx)}
+        ${copyRow(crit[0],crit[1])}
+        ${copyRow('Institución emisora',p.banco_emisor)}
+        ${copyRow('Institución receptora',S.receptor)}
+        ${copyRow('Cuenta beneficiaria (CLABE)',S.clabe)}
+        ${copyRow('Monto',String(parseMonto(p.monto).toFixed(2)))}
+        <a class="btn btn-pri btn-block" style="margin-top:10px;text-decoration:none" href="https://www.banxico.org.mx/cep/" target="_blank" rel="noopener">Abrir Banxico ↗</a>
+      </div>
+      <div class="box"><h3>2 · ¿Qué dijo Banxico?</h3><p>Si aparece, descarga el CEP (PDF) y súbelo aquí.</p>
+        <div class="fld"><label>CEP de Banxico (opcional)</label><input id="v-cep" type="file" accept="application/pdf,image/*,.xml"></div>
+        <div class="fld"><label>Nota (opcional)</label><input id="v-nota" type="text"></div>
+        <div class="err" id="v-err"></div>
+        <div class="acts"><button class="btn btn-green" onclick="doVal('${id}','${E.LIQ}')">✅ Liquidado</button><button class="btn btn-red" onclick="doVal('${id}','${E.NO}')">❌ No encontrado</button></div>
+        ${p.estatus===E.NO?'<div class="hint" style="margin-top:8px">Tip: a veces tarda unos minutos en aparecer. Vuelve a intentar antes de rechazar al cliente.</div>':''}
+      </div>`;
+    }
+    if(esPedro && p.estatus!==E.POR && p.estatus!==E.PEN){
+      acc += `<button class="btn btn-ghost btn-block" onclick="doVal('${id}','${E.POR}')">↺ Regresar a "Por validar"</button>`;
+    }
+  }
+
+  modal(`
+    <div class="m-hdr"><h2>${esc(p.cliente||'Pago')}</h2><button class="x" onclick="closeModal()">✕</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <b style="font-size:28px">${money(p.monto)}</b><span class="badge ${badgeCls(p.estatus)}" style="font-size:12px">${badgeTxt(p.estatus)}</span>
+    </div>
+    ${validado?`<div class="info" style="background:var(--greenbg);color:var(--green)">Validado por <b>${esc(p.validado_por)}</b> · ${esc(p.fecha_validacion)}</div>`:''}
+    ${p.estatus===E.NO?`<div class="warn">No se encontró en Banxico${p.validado_por?' · '+esc(p.validado_por)+' · '+esc(p.fecha_validacion):''}. No entregues el equipo.</div>`:''}
+    <dl class="det">
+      <dt>Fecha pago</dt><dd>${fmtFecha(p.fecha_pago)}</dd>
+      <dt>Banco</dt><dd>${esc(p.banco_emisor)}</dd>
+      ${p.clave_rastreo?`<dt>Clave rastreo</dt><dd>${esc(p.clave_rastreo)}</dd>`:''}
+      ${p.referencia?`<dt>Referencia</dt><dd>${esc(p.referencia)}</dd>`:''}
+      ${p.concepto?`<dt>Concepto</dt><dd>${esc(p.concepto)}</dd>`:''}
+      ${p.equipo_id?`<dt>Equipo</dt><dd>${esc(p.equipo_id)}</dd>`:''}
+      <dt>Registró</dt><dd>${esc(p.registro_por)} · ${esc(p.fecha_registro)}</dd>
+      ${p.comprobante_url?`<dt>Comprobante</dt><dd><a href="${attr(p.comprobante_url)}" target="_blank" rel="noopener">Ver archivo ↗</a></dd>`:''}
+      ${p.cep_url?`<dt>CEP Banxico</dt><dd><a href="${attr(p.cep_url)}" target="_blank" rel="noopener">Ver CEP ↗</a></dd>`:''}
+      ${p.notas?`<dt>Notas</dt><dd style="word-break:normal">${esc(p.notas)}</dd>`:''}
+      <dt>ID</dt><dd>${esc(p.id)}</dd>
+    </dl>
+    ${acc}
+  `);
+}
+
+async function doVal(id,resultado){
+  const btns=[...document.querySelectorAll('#modal-root .acts button, #modal-root .btn-ghost')];
+  const err=document.getElementById('v-err');
+  btns.forEach(b=>b.disabled=true);
+  try{
+    const data={id,resultado,nota:(document.getElementById('v-nota')||{}).value||''};
+    const cep=document.getElementById('v-cep'); if(cep&&cep.files[0])data.cep=await fileToPayload(cep.files[0]);
+    const j=await api('validate',data);
+    if(!j.ok)throw new Error(j.error);
+    closeModal(); toast(resultado===E.NO?'Marcado como no encontrado':resultado===E.POR?'Regresado a por validar':'Pago validado ✅');
+    refresh();
+  }catch(e){ if(err)err.textContent=e.message; else toast('⚠️ '+e.message); btns.forEach(b=>b.disabled=false); }
+}
+
+// ═══ UTILIDADES ═══════════════════════════════════════════════
+function copyRow(label,val){
+  val=String(val||'');
+  return `<div class="copy"><div><small>${esc(label)}</small><b>${esc(val||'—')}</b></div>${val?`<button data-v="${esc(val)}" onclick="copyTxt(this,this.dataset.v)">Copiar</button>`:''}</div>`;
+}
+async function copyTxt(btn,t){
+  try{await navigator.clipboard.writeText(t);}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();}
+  btn.textContent='✓';btn.classList.add('ok');setTimeout(()=>{btn.textContent='Copiar';btn.classList.remove('ok')},1500);
+}
+function modal(html){
+  document.getElementById('modal-root').innerHTML=`<div class="ov" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`;
+  document.body.style.overflow='hidden';
+}
+function closeModal(){document.getElementById('modal-root').innerHTML='';document.body.style.overflow='';}
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2500);}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function attr(s){return esc(s);}
+function normClave(s){return String(s||'').toUpperCase().replace(/\s+/g,'');}
+function parseMonto(m){return parseFloat(String(m||'').replace(/[$,\s]/g,''))||0;}
+function money(m){return '$'+parseMonto(m).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtFecha(f){const m=String(f||'').match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${m[3]}-${m[2]}-${m[1]}`:esc(f||'—');}
+function badgeCls(e){return {[E.POR]:'b-POR',[E.PEN]:'b-PEN',[E.LIQ]:'b-LIQ',[E.CON]:'b-CON',[E.NO]:'b-NO'}[e]||'b-POR';}
+function badgeTxt(e){return {[E.POR]:'🔵 Por validar',[E.PEN]:'🟡 Pendiente Pedro',[E.LIQ]:'✅ Liquidado',[E.CON]:'✅ Confirmado',[E.NO]:'❌ No encontrado'}[e]||e;}
+
+async function fileToPayload(file){
+  if(file.size>15*1024*1024)throw new Error('Archivo muy pesado (máx 15 MB)');
+  let blob=file, type=file.type||'application/octet-stream', name=file.name;
+  if(/^image\//.test(type)&&!/heic/i.test(type)){ // comprimir fotos
+    try{
+      const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(file);});
+      const k=Math.min(1,1600/Math.max(img.width,img.height)), c=document.createElement('canvas');
+      c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.82)); type='image/jpeg'; name=name.replace(/\.[^.]+$/,'')+'.jpg';
+    }catch(e){blob=file;}
+  }
+  if(/\.xml$/i.test(name))type='text/xml';
+  const data=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(blob);});
+  return {name,type,data};
+}
+
+// Auto-login en la misma pestaña
+(async()=>{let p='';try{p=sessionStorage.getItem('wtp')||''}catch(e){}
+  if(p){S.pin=p;try{const j=await api('login');if(j.ok){Object.assign(S,{rol:j.rol,nombre:j.nombre,clabe:j.clabe,receptor:j.receptor});startApp();return;}}catch(e){} S.pin='';}
+})();
+</script>
+</body>
+</html>
