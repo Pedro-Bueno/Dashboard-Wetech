@@ -99,6 +99,24 @@ input,select,textarea{font-family:inherit;font-size:16px}
 .ocr-box{border:2px dashed var(--accent);background:#f0f5ff;border-radius:14px;padding:14px;margin-bottom:14px;text-align:center}
 .ocr-btn{display:block;background:var(--accent);color:#fff;font-weight:700;border-radius:12px;padding:13px;cursor:pointer}
 .auto{background:#fefce8!important;border-color:#eab308!important}
+.caja{width:100%;display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px 14px;background:linear-gradient(135deg,#065f46,#16a34a);color:#fff;border:none;border-radius:16px;padding:16px;margin-bottom:14px;text-align:left;font:inherit}
+.caja small{display:block;font-size:11px;font-weight:700;opacity:.85;text-transform:uppercase;letter-spacing:.05em}
+.caja b{font-size:30px;line-height:1.1}
+.caja .caja-r{text-align:right;font-size:13px;font-weight:600}
+.caja .caja-go{grid-column:1/-1;font-size:13px;font-weight:700;opacity:.95}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.seg button{border:2px solid var(--brd);background:#fff;border-radius:12px;padding:12px;font-weight:700;font-size:15px;color:var(--muted)}
+.seg button.on{border-color:var(--accent);background:#eff4ff;color:var(--accent)}
+.opt{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--brd);border-radius:12px;padding:11px 12px;margin-bottom:8px;cursor:pointer;font-size:14px}
+.fld label.opt{display:flex;text-transform:none;letter-spacing:0;color:var(--txt);font-size:14px;font-weight:500;margin-bottom:8px}
+.opt b{font-weight:700}
+.opt input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent)}
+.opt small{display:block;color:var(--muted);font-size:12px}
+.opt:has(input:checked){border-color:var(--accent);background:#eff4ff}
+.b-EFV{background:#ffedd5;color:#c2410c}.b-EFM{background:#ede9fe;color:#6d28d9}.b-EFP{background:var(--greenbg);color:var(--green)}
+.cuadre{border-radius:12px;padding:12px;font-weight:700;text-align:center;margin:10px 0;font-size:15px}
+.mini{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px dashed var(--brd);font-size:13px}
+.mini:first-child{border-top:none}.mini span{color:var(--muted)}
 .acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:30px;font-size:14px;font-weight:600;z-index:80;box-shadow:0 8px 24px rgba(0,0,0,.25)}
 .spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite}
@@ -131,6 +149,11 @@ input,select,textarea{font-family:inherit;font-size:16px}
       <div class="stat"><small>Validados hoy</small><b id="s-hoy">0</b></div>
       <div class="stat"><small>No encontrados</small><b id="s-no" style="color:var(--red)">0</b></div>
     </div>
+    <button id="caja-card" class="caja hidden" onclick="openCaja()">
+      <div><small>💵 Efectivo con mamá</small><b id="c-mama">$0.00</b></div>
+      <div class="caja-r"><small>Con vendedores</small><span id="c-vend">$0.00</span></div>
+      <span class="caja-go" id="c-go">Toca para recoger →</span>
+    </button>
     <div class="bar"><div class="tabs" id="tabs"></div></div>
     <input class="search" id="q" placeholder="Buscar cliente, clave, monto, equipo…" oninput="render()">
     <div class="list" id="list"><div class="empty">Cargando…</div></div>
@@ -148,15 +171,19 @@ const BANCOS = ['BBVA MEXICO','BANAMEX','SANTANDER','BANORTE','HSBC','SCOTIABANK
   'BANREGIO','HEY BANCO','BANBAJIO','AFIRME','NU MEXICO','MERCADO PAGO W','SPIN BY OXXO','STP','KLAR','ALBO','CUENCA',
   'BANCO WALMART','COMPARTAMOS','BANCREA','OTRO'];
 const CONCEPTOS = ['Venta contado','Enganche crédito','Abono crédito','Apartado','Otro'];
-const E = {POR:'POR VALIDAR',PEN:'PENDIENTE PEDRO',LIQ:'LIQUIDADO',CON:'CONFIRMADO',NO:'NO ENCONTRADO'};
+const E = {POR:'POR VALIDAR',PEN:'PENDIENTE PEDRO',LIQ:'LIQUIDADO',CON:'CONFIRMADO',NO:'NO ENCONTRADO',
+  EFV:'EFECTIVO CON VENDEDOR',EFM:'EFECTIVO CON MAMA',EFP:'EFECTIVO RECIBIDO'};
+const VENDEDORES = ['Odett Medina','Athziri Preciado','Citlali Preciado','Yare Ibarra','Diana Galván','Laura Contreras','Otro'];
+const esEf = p => p.metodo==='EFECTIVO';
 const TABS = [
-  {k:'pend',l:'Pendientes',f:p=>[E.POR,E.PEN,E.NO].includes(p.estatus)},
+  {k:'pend',l:'Pendientes',f:p=>[E.POR,E.PEN,E.NO,E.EFV].includes(p.estatus)},
   {k:'ok',l:'Validados',f:p=>[E.LIQ,E.CON].includes(p.estatus)},
+  {k:'ef',l:'💵 Efectivo',f:esEf},
   {k:'no',l:'No encontrados',f:p=>p.estatus===E.NO},
   {k:'all',l:'Todos',f:()=>true},
 ];
 
-let S = {pin:'',rol:'',nombre:'',clabe:'',receptor:'BBVA MEXICO',pagos:[],tab:'pend'};
+let S = {pin:'',rol:'',nombre:'',clabe:'',receptor:'BBVA MEXICO',pagos:[],tab:'pend',metodo:'TRANSFERENCIA',caja:null};
 
 // ═══ API ══════════════════════════════════════════════════════
 async function api(action, data={}){
@@ -190,7 +217,9 @@ function startApp(){
   document.getElementById('login').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('who').textContent=S.nombre;
+  if(S.rol==='pedro')document.getElementById('caja-card').classList.remove('hidden');
   refresh();
+  setInterval(()=>{if(document.visibilityState==='visible'&&!document.querySelector('#modal-root .ov'))refresh();},60000);
 }
 
 // ═══ DATOS ════════════════════════════════════════════════════
@@ -200,6 +229,16 @@ async function refresh(){
     if(!j.ok)throw new Error(j.error);
     S.pagos=j.pagos||[]; render();
   }catch(e){document.getElementById('list').innerHTML=`<div class="empty">⚠️ ${esc(e.message)}</div>`;}
+  if(S.rol==='pedro')loadCaja();
+}
+async function loadCaja(){
+  try{
+    const j=await api('caja'); if(!j.ok)return;
+    S.caja=j;
+    document.getElementById('c-mama').textContent=money(j.total_mama);
+    document.getElementById('c-vend').textContent=money(j.total_vendedor)+(j.con_vendedor.length?` (${j.con_vendedor.length})`:'');
+    document.getElementById('c-go').textContent=j.con_mama.length?`${j.con_mama.length} pago${j.con_mama.length>1?'s':''} · Toca para recoger →`:'Nada pendiente con mamá';
+  }catch(e){}
 }
 
 function render(){
@@ -215,41 +254,52 @@ function render(){
 
   const q=document.getElementById('q').value.toLowerCase().trim();
   const tab=TABS.find(t=>t.k===S.tab);
-  const list=S.pagos.filter(tab.f).filter(p=>!q||[p.cliente,p.clave_rastreo,p.referencia,p.monto,p.equipo_id,p.banco_emisor,p.id,p.concepto].join(' ').toLowerCase().includes(q));
+  const list=S.pagos.filter(tab.f).filter(p=>!q||[p.cliente,p.clave_rastreo,p.referencia,p.monto,p.equipo_id,p.banco_emisor,p.id,p.concepto,p.vendedor].join(' ').toLowerCase().includes(q));
   const el=document.getElementById('list');
   if(!list.length){el.innerHTML='<div class="empty">No hay pagos aquí.</div>';return;}
   el.innerHTML=list.map(p=>`
     <button class="pago" onclick="openDet('${p.id}')">
       <div class="p-cli">${esc(p.cliente||'Sin nombre')}</div>
       <div class="p-monto">${money(p.monto)}</div>
-      <div class="p-meta">${esc(p.banco_emisor)} · ${fmtFecha(p.fecha_pago)}${p.concepto?' · '+esc(p.concepto):''}</div>
+      <div class="p-meta">${esEf(p)?'💵 Efectivo':esc(p.banco_emisor)} · ${fmtFecha(p.fecha_pago)}${p.concepto?' · '+esc(p.concepto):''}</div>
       <span class="badge ${badgeCls(p.estatus)}">${badgeTxt(p.estatus)}</span>
-      <div class="p-meta" style="grid-column:1/-1">${p.clave_rastreo?'🔑 '+esc(p.clave_rastreo):'Ref: '+esc(p.referencia||'—')} · ${esc(p.registro_por)}</div>
+      <div class="p-meta" style="grid-column:1/-1">${esEf(p)?'Cobró: '+esc(p.vendedor||'—'):(p.clave_rastreo?'🔑 '+esc(p.clave_rastreo):'Ref: '+esc(p.referencia||'—'))} · ${esc(p.registro_por)}</div>
     </button>`).join('');
 }
 
 // ═══ REGISTRAR ════════════════════════════════════════════════
 function openNew(){
-  S.ocrFile=null;
+  S.ocrFile=null; S.metodo='TRANSFERENCIA';
   const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/Mexico_City'});
   modal(`
     <div class="m-hdr"><h2>Registrar pago</h2><button class="x" onclick="closeModal()">✕</button></div>
-    <div class="ocr-box">
+    <div class="seg"><button id="m-t" class="on" onclick="setMetodo('TRANSFERENCIA')">🏦 Transferencia</button><button id="m-e" onclick="setMetodo('EFECTIVO')">💵 Efectivo</button></div>
+    <div id="t-only"><div class="ocr-box">
       <label for="f-foto" class="ocr-btn" id="ocr-lbl">📷 Subir comprobante y llenar automático</label>
       <input id="f-foto" type="file" accept="image/*,application/pdf" class="hidden" onchange="leerFoto()">
       <div class="hint" id="ocr-st">Toma foto o sube la captura/PDF que mandó el cliente.</div>
     </div>
-    <div id="f-warn"></div>
+    <div id="f-warn"></div></div>
     <div class="row2">
       <div class="fld"><label>Fecha del pago</label><input id="f-fecha" type="date" value="${today}"></div>
       <div class="fld"><label>Monto</label><input id="f-monto" type="text" inputmode="decimal" placeholder="$0.00"></div>
     </div>
+    <div id="e-only" class="hidden">
+      <div class="fld"><label>¿Dónde está el efectivo?</label>
+        <label class="opt"><input type="radio" name="f-rec" value="MAMA" checked onchange="chkRec()"><div><b>El vendedor ya se lo entregó a mamá</b><small>Suma a la caja de mamá</small></div></label>
+        <label class="opt"><input type="radio" name="f-rec" value="VENDEDOR" onchange="chkRec()"><div><b>El vendedor aún lo trae</b><small>Queda pendiente hasta que lo entregue</small></div></label>
+        <label class="opt"><input type="radio" name="f-rec" value="PEDRO" onchange="chkRec()"><div><b>Lo recibió Pedro directo</b><small>No suma a la caja de mamá</small></div></label>
+      </div>
+      <div class="fld" id="f-vend-w"><label>Vendedor que cobró</label><select id="f-vend"><option value="">Selecciona…</option>${VENDEDORES.map(v=>`<option>${v}</option>`).join('')}</select></div>
+    </div>
+    <div id="t-only2">
     <div class="fld"><label>Banco que envía</label>
       <select id="f-banco" onchange="chkBanco()"><option value="">Selecciona…</option>${BANCOS.map(b=>`<option>${b}</option>`).join('')}</select>
       <div id="f-banco-info"></div>
     </div>
     <div class="fld"><label>Clave de rastreo</label><input id="f-clave" type="text" autocapitalize="characters" placeholder="Viene en el comprobante del cliente" oninput="chkDup()"></div>
     <div class="fld"><label>Referencia / concepto numérico <span style="text-transform:none;font-weight:500">(opcional)</span></label><input id="f-ref" type="text" inputmode="numeric"></div>
+    </div>
     <div class="fld"><label>Cliente</label><input id="f-cli" type="text" placeholder="Nombre del cliente"></div>
     <div class="row2">
       <div class="fld"><label>ID equipo</label><input id="f-eq" type="text" placeholder="Ej. Dc2ae1307"></div>
@@ -259,6 +309,16 @@ function openNew(){
     <div class="err" id="f-err"></div>
     <button class="btn btn-pri btn-block" id="f-btn" onclick="saveNew()">Guardar pago</button>
   `);
+}
+function setMetodo(m){
+  S.metodo=m; const ef=m==='EFECTIVO', g=id=>document.getElementById(id);
+  g('m-t').classList.toggle('on',!ef); g('m-e').classList.toggle('on',ef);
+  ['t-only','t-only2'].forEach(id=>g(id).classList.toggle('hidden',ef)); g('e-only').classList.toggle('hidden',!ef);
+  g('f-err').textContent=''; if(ef)chkRec();
+}
+function chkRec(){
+  const r=(document.querySelector('input[name=f-rec]:checked')||{}).value;
+  document.getElementById('f-vend-w').classList.toggle('hidden',r==='PEDRO');
 }
 async function leerFoto(){
   const g=id=>document.getElementById(id), f=g('f-foto').files[0], st=g('ocr-st'), lbl=g('ocr-lbl');
@@ -290,6 +350,21 @@ function chkDup(){
 }
 async function saveNew(){
   const g=id=>document.getElementById(id), err=g('f-err'), b=g('f-btn');
+  if(S.metodo==='EFECTIVO'){
+    const rec=(document.querySelector('input[name=f-rec]:checked')||{}).value;
+    const d={metodo:'EFECTIVO',fecha_pago:g('f-fecha').value,monto:g('f-monto').value,recibio:rec,vendedor:g('f-vend').value,
+      cliente:g('f-cli').value,equipo_id:g('f-eq').value,concepto:g('f-con').value,notas:g('f-notas').value};
+    if(!d.fecha_pago||!(parseMonto(d.monto)>0)){err.textContent='Fecha y monto son obligatorios';return;}
+    if(rec!=='PEDRO'&&!d.vendedor){err.textContent='¿Qué vendedor lo cobró?';return;}
+    err.textContent=''; b.disabled=true; b.innerHTML='<span class="spin"></span> Guardando…';
+    try{
+      const j=await api('create',d); if(!j.ok){err.textContent=j.error;return;}
+      closeModal(); toast(rec==='MAMA'?'💵 Sumado a caja de mamá':rec==='VENDEDOR'?'💵 Pendiente con vendedor':'💵 Efectivo recibido por Pedro');
+      refresh();
+    }catch(e){err.textContent=e.message;}
+    finally{b.disabled=false;b.textContent='Guardar pago';}
+    return;
+  }
   const data={fecha_pago:g('f-fecha').value, monto:g('f-monto').value, banco_emisor:g('f-banco').value,
     clave_rastreo:g('f-clave').value, referencia:g('f-ref').value, cliente:g('f-cli').value,
     equipo_id:g('f-eq').value, concepto:g('f-con').value, notas:g('f-notas').value};
@@ -310,6 +385,7 @@ async function saveNew(){
 // ═══ DETALLE / VALIDAR ════════════════════════════════════════
 function openDet(id){
   const p=S.pagos.find(x=>x.id===id); if(!p)return;
+  if(esEf(p))return openDetEf(p);
   const mismo=/BBVA/.test(p.banco_emisor), esPedro=S.rol==='pedro';
   const validado=[E.LIQ,E.CON].includes(p.estatus);
   let acc='';
@@ -371,6 +447,78 @@ function openDet(id){
   `);
 }
 
+function openDetEf(p){
+  const esPedro=S.rol==='pedro';
+  let acc='';
+  if(p.estatus===E.EFV) acc=`<div class="box"><h3>¿Ya entregó el efectivo a mamá?</h3><p>Márcalo cuando ${esc(p.vendedor||'el vendedor')} le dé el dinero.</p>
+    <div class="err" id="v-err"></div><button class="btn btn-green btn-block" id="b-ent" onclick="doEntregar('${p.id}')">✅ Ya lo entregó a mamá</button></div>`;
+  else if(p.estatus===E.EFM) acc=`<div class="info" style="background:#ede9fe;color:#6d28d9">💵 Está con mamá, pendiente de que Pedro lo recoja.</div>${esPedro?'<button class="btn btn-ghost btn-block" onclick="openCaja()">Ir a caja de mamá →</button>':''}`;
+  else if(p.estatus===E.EFP) acc=`<div class="info" style="background:var(--greenbg);color:var(--green)">✅ Recibido por Pedro · ${esc(p.fecha_validacion)}${p.corte_id?' · Corte '+esc(p.corte_id):''}</div>`;
+  modal(`
+    <div class="m-hdr"><h2>${esc(p.cliente||'Pago en efectivo')}</h2><button class="x" onclick="closeModal()">✕</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <b style="font-size:28px">${money(p.monto)}</b><span class="badge ${badgeCls(p.estatus)}" style="font-size:12px">${badgeTxt(p.estatus)}</span>
+    </div>
+    <dl class="det">
+      <dt>Método</dt><dd>💵 Efectivo</dd>
+      <dt>Fecha pago</dt><dd>${fmtFecha(p.fecha_pago)}</dd>
+      <dt>Cobró</dt><dd>${esc(p.vendedor||'—')}</dd>
+      ${p.fecha_entrega_mama?`<dt>Entregado a mamá</dt><dd>${esc(p.fecha_entrega_mama)}</dd>`:''}
+      ${p.concepto?`<dt>Concepto</dt><dd>${esc(p.concepto)}</dd>`:''}
+      ${p.equipo_id?`<dt>Equipo</dt><dd>${esc(p.equipo_id)}</dd>`:''}
+      <dt>Registró</dt><dd>${esc(p.registro_por)} · ${esc(p.fecha_registro)}</dd>
+      ${p.notas?`<dt>Notas</dt><dd style="word-break:normal">${esc(p.notas)}</dd>`:''}
+      <dt>ID</dt><dd>${esc(p.id)}</dd>
+    </dl>${acc}`);
+}
+async function doEntregar(id){
+  const b=document.getElementById('b-ent'); b.disabled=true;
+  try{const j=await api('entregar_mama',{id}); if(!j.ok)throw new Error(j.error); closeModal(); toast('💵 Sumado a caja de mamá'); refresh();}
+  catch(e){document.getElementById('v-err').textContent=e.message; b.disabled=false;}
+}
+
+// ═══ CAJA MAMÁ (solo Pedro) ═══════════════════════════════════
+async function openCaja(){
+  modal(`<div class="m-hdr"><h2>💵 Caja de mamá</h2><button class="x" onclick="closeModal()">✕</button></div><div class="empty"><span class="spin" style="border-color:rgba(29,78,216,.3);border-top-color:#1d4ed8"></span></div>`);
+  await loadCaja(); const c=S.caja;
+  if(!c){modal(`<div class="m-hdr"><h2>💵 Caja de mamá</h2><button class="x" onclick="closeModal()">✕</button></div><div class="empty">No se pudo cargar.</div>`);return;}
+  const item=x=>`<div class="mini"><div>${esc(x.cliente||'Sin nombre')}<br><span>${fmtFecha(x.fecha_pago)} · ${esc(x.vendedor||'')}${x.concepto?' · '+esc(x.concepto):''}</span></div><b>${money(x.monto)}</b></div>`;
+  modal(`
+    <div class="m-hdr"><h2>💵 Caja de mamá</h2><button class="x" onclick="closeModal()">✕</button></div>
+    <div style="text-align:center;margin-bottom:14px"><small style="color:var(--muted);font-weight:700;font-size:12px">DEBE TENER</small><div style="font-size:38px;font-weight:700">${money(c.total_mama)}</div><small style="color:var(--muted)">${c.con_mama.length} pago${c.con_mama.length===1?'':'s'}</small></div>
+    ${c.con_mama.length?`
+    <div class="box">${c.con_mama.map(item).join('')}</div>
+    <div class="box"><h3>Recoger efectivo</h3><p>Cuenta el dinero y escribe cuánto te entregó.</p>
+      <div class="fld"><label>Monto contado</label><input id="k-cont" type="text" inputmode="decimal" placeholder="$0.00" oninput="chkCuadre()"></div>
+      <div id="k-cuadre"></div>
+      <div class="fld"><label>Nota (opcional)</label><input id="k-nota" type="text" placeholder="Ej. faltó un billete de $500"></div>
+      <div class="err" id="k-err"></div>
+      <button class="btn btn-green btn-block" id="k-btn" onclick="doCorte()">Confirmar que recogí el efectivo</button>
+    </div>`:'<div class="empty" style="padding:20px">Mamá no tiene efectivo pendiente. 🙌</div>'}
+    ${c.con_vendedor.length?`<div class="box"><h3>🟠 Aún con vendedores · ${money(c.total_vendedor)}</h3><p>Todavía no se entrega a mamá; no está incluido arriba.</p>${c.con_vendedor.map(item).join('')}</div>`:''}
+    ${c.cortes.length?`<div class="box"><h3>Últimas recolecciones</h3>${c.cortes.map(k=>`<div class="mini"><div>${esc(k.fecha)}<br><span>${esc(k.num_pagos)} pagos${k.nota?' · '+esc(k.nota):''}</span></div><div style="text-align:right"><b>${money(k.contado)}</b><br><span style="color:${k.diferencia===0?'var(--green)':'var(--red)'}">${k.diferencia===0?'✅ Cuadró':(k.diferencia<0?'Faltó ':'Sobró ')+money(Math.abs(k.diferencia))}</span></div></div>`).join('')}</div>`:''}
+  `);
+}
+function chkCuadre(){
+  const c=S.caja, v=document.getElementById('k-cont').value, el=document.getElementById('k-cuadre');
+  if(!v.trim()){el.innerHTML='';return;}
+  const d=Math.round((parseMonto(v)-c.total_mama)*100)/100;
+  el.innerHTML=d===0?'<div class="cuadre" style="background:var(--greenbg);color:var(--green)">✅ Cuadra exacto</div>'
+    :`<div class="cuadre" style="background:var(--redbg);color:var(--red)">${d<0?'⚠️ Faltan ':'⚠️ Sobran '}${money(Math.abs(d))}</div>`;
+}
+async function doCorte(){
+  const c=S.caja, v=document.getElementById('k-cont').value, err=document.getElementById('k-err'), b=document.getElementById('k-btn');
+  if(!v.trim()){err.textContent='Escribe cuánto contaste';return;}
+  const d=Math.round((parseMonto(v)-c.total_mama)*100)/100;
+  if(d!==0&&!document.getElementById('k-nota').value.trim()){err.textContent='No cuadra: agrega una nota explicando la diferencia';return;}
+  b.disabled=true; b.innerHTML='<span class="spin"></span> Guardando…';
+  try{
+    const j=await api('corte',{ids:c.con_mama.map(x=>x.id),contado:v,nota:document.getElementById('k-nota').value});
+    if(!j.ok)throw new Error(j.error);
+    closeModal(); toast(j.diferencia===0?'✅ Recolección guardada · cuadró':'Recolección guardada · diferencia '+money(j.diferencia)); refresh();
+  }catch(e){err.textContent=e.message; b.disabled=false; b.textContent='Confirmar que recogí el efectivo';}
+}
+
 async function doVal(id,resultado){
   const btns=[...document.querySelectorAll('#modal-root .acts button, #modal-root .btn-ghost')];
   const err=document.getElementById('v-err');
@@ -406,8 +554,8 @@ function normClave(s){return String(s||'').toUpperCase().replace(/\s+/g,'');}
 function parseMonto(m){return parseFloat(String(m||'').replace(/[$,\s]/g,''))||0;}
 function money(m){return '$'+parseMonto(m).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtFecha(f){const m=String(f||'').match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${m[3]}-${m[2]}-${m[1]}`:esc(f||'—');}
-function badgeCls(e){return {[E.POR]:'b-POR',[E.PEN]:'b-PEN',[E.LIQ]:'b-LIQ',[E.CON]:'b-CON',[E.NO]:'b-NO'}[e]||'b-POR';}
-function badgeTxt(e){return {[E.POR]:'🔵 Por validar',[E.PEN]:'🟡 Pendiente Pedro',[E.LIQ]:'✅ Liquidado',[E.CON]:'✅ Confirmado',[E.NO]:'❌ No encontrado'}[e]||e;}
+function badgeCls(e){return {[E.POR]:'b-POR',[E.PEN]:'b-PEN',[E.LIQ]:'b-LIQ',[E.CON]:'b-CON',[E.NO]:'b-NO',[E.EFV]:'b-EFV',[E.EFM]:'b-EFM',[E.EFP]:'b-EFP'}[e]||'b-POR';}
+function badgeTxt(e){return {[E.POR]:'🔵 Por validar',[E.PEN]:'🟡 Pendiente Pedro',[E.LIQ]:'✅ Liquidado',[E.CON]:'✅ Confirmado',[E.NO]:'❌ No encontrado',[E.EFV]:'🟠 Con vendedor',[E.EFM]:'💵 Con mamá',[E.EFP]:'✅ Efectivo recibido'}[e]||e;}
 
 async function fileToPayload(file){
   if(file.size>15*1024*1024)throw new Error('Archivo muy pesado (máx 15 MB)');
